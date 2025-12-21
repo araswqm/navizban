@@ -7,7 +7,7 @@ Sade, hızlı ve günlük kullanım için tasarlanmıştır.
 
 ---
 
-✨ Özellikler
+# ✨ Özellikler
 
 📍 Başlangıç ve varış istasyonu seçimi
 
@@ -25,7 +25,7 @@ Sade, hızlı ve günlük kullanım için tasarlanmıştır.
 
 ---
 
-🌐 İnternet Kullanımı
+# 🌐 İnternet Kullanımı
 
 Uygulama genel olarak offline çalışır.
 
@@ -37,7 +37,7 @@ Süre hesaplama ve simülasyon mantığı internet olmadan da çalışır
 
 ---
 
-🎯 Amaç
+# 🎯 Amaç
 
 Navİzban;
 
@@ -53,7 +53,7 @@ amacıyla geliştirilmiştir.
 
 ---
 
-🧭 UI Kullanım Kılavuzu
+# 🧭 UI Kullanım Kılavuzu
 
 Uygulamanın üst bölümünde yer alan iki spinner üzerinden biniş (üstte) ve varış (altta) durakları seçilir. Kullanıcı bu seçimleri yaptıktan sonra, yolculuğa ait tahmini süre otomatik olarak hesaplanır ve ekranın alt kısmında görüntülenir.
 
@@ -75,7 +75,7 @@ GPS kullanılmadığı için, tren imlecinin konumu duraklara erken veya geç va
 
 ---
 
-🤝 Katkı
+# 🤝 Katkı
 
 Geri bildirimlere ve önerilere açıktır.
 Issue açabilir veya pull request gönderebilirsin.
@@ -83,7 +83,7 @@ Issue açabilir veya pull request gönderebilirsin.
 
 ---
 
-📜 Lisans
+# 📜 Lisans
 
 Açık kaynak.
 Kullanmak, incelemek ve geliştirmek serbesttir.
