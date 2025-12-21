@@ -43,12 +43,9 @@ Süre hesaplama ve simülasyon mantığı internet olmadan da çalışır
 
 Navİzban;
 
-İZBAN hattını daha görsel ve anlaşılır hâle getirmek
-
-Yolculuk süresini hızlıca görmek
-
-Kendi başına çalışan, sade bir simülasyon sunmak
-
+* İZBAN hattını daha görsel ve anlaşılır hâle getirmek
+* Yolculuk süresini hızlıca görmek
+* Kendi başına çalışan, sade bir simülasyon sunmak
 
 amacıyla geliştirilmiştir.
 
