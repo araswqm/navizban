@@ -1,3 +1,5 @@
+![Navİzban](icon.png)
+
 # 🚆 Navİzban
 
 Navİzban, İzmir’in İZBAN hattı için hazırlanmış; istasyonlar arası tahmini yolculuk süresini gösteren ve tren hareketini harita üzerinde simüle eden bir Android uygulamasıdır.
