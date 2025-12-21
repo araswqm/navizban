@@ -70,7 +70,7 @@ Tren hareketi tek bir butonla başlatılıp sonlandırılabilir
 
 Uygulama, tahmini varış süresi ve tren imlecinin hareketi için GPS kullanmaz. Tüm hesaplamalar bu sürümde şimdilik manuel simülasyon mantığıyla çalışır.
 
-Kullanıcı, spinnerlar üzerinden biniş ve varış duraklarını seçer. Alt bardaki bilgi alanında yolculuğun tahmini süresi görüntülenir. Tren hareketi başlatıldığında, tren imleci harita üzerinde eşzamanlı olarak hareket etmeye başlar ve tahmini süre dakika dakika azalır.
+Kullanıcı, spinnerlar üzerinden biniş ve varış duraklarını seçer. Alt bardaki bilgi alanında yolculuğun tahmini süresi görüntülenir. Kullanıcı tren hareket ettiğinde "Başla" butonuna basar, tren imleci harita üzerinde eşzamanlı olarak hareket etmeye başlar ve tahmini süre dakika dakika azalır.
 
 GPS kullanılmadığı için, tren imlecinin konumu duraklara erken veya geç varmış gibi görünebilir. Herhangi bir gecikme olmadığı varsayıldığında, tren imleci seçilen varış durağına hesaplanan tahmini sürede ulaşır.
 
