@@ -1,4 +1,4 @@
-![Navİzban](icon.png)
+![Navİzban](logo.png)
 
 # 🚆 Navİzban
 
