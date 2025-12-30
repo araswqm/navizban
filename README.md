@@ -84,3 +84,7 @@ Issue açabilir veya pull request gönderebilirsin.
 
 Açık kaynak.  
 Kullanmak, incelemek ve geliştirmek serbesttir.
+
+---
+
+![Screenshots](v1.1beta_screenshots.jpg)
