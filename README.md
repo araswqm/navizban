@@ -1,28 +1,22 @@
 ![Navİzban](logo.png)
 
-# 🚆 Navİzban
+# 🚆 Navizban
 
-Navİzban, İzmir’in İZBAN hattı için hazırlanmış; istasyonlar arası tahmini yolculuk süresini gösteren ve tren hareketini harita üzerinde simüle eden bir Android uygulamasıdır.
+Navizban, İzmir’in İZBAN banliyö hattı için hazırlanmış; kullanıcının konumuna göre tahmini yolculuk süresini hesaplayan ve tren hareketini harita üzerinde simüle eden bir Android uygulamasıdır.
 
-Sade, hızlı ve günlük kullanım için tasarlanmıştır.
+Karanlık tema destekli, modern arayüzlü ve günlük kullanım için sade olacak şekilde tasarlanmıştır.
 
 
 ---
 
 # ✨ Özellikler
 
-📍 Başlangıç ve varış istasyonu seçimi
-
-⏱️ Otomatik yolculuk süresi hesaplama
-
-🗺️ Harita üzerinde hareket eden tren imleci
-
-▶️ Tek tuşla simülasyon kontrolü
-
-👁️ Bilgi panelini gizleme / gösterme
-
-🧭 GPS kullanmadan çalışan simülasyon mantığı
-
+📍 Kullanıcının konumuna göre otomatik biniş durağı tespiti  
+⏱️ Dakikada bir güncellenen tahmini kalan süre  
+🗺️ Harita üzerinde animasyonlu tren imleci  
+▶️ Tek tuşla simülasyon başlatma / durdurma  
+👁️ Alt bilgi panelini gizleme / gösterme  
+🧭 Konum verileriyle çalışan simülasyon
 
 
 ---
@@ -31,10 +25,9 @@ Sade, hızlı ve günlük kullanım için tasarlanmıştır.
 
 Uygulama genel olarak offline çalışır.
 
-Sadece harita detaylarının (arka planın) tamamen yüklenmesi için internet bağlantısı gerekir
+Sadece harita arka planının (map tiles) yüklenmesi için internet bağlantısı gerekir.
 
-Süre hesaplama ve simülasyon mantığı internet olmadan da çalışır
-
+Süre hesaplama, GPS takibi ve simülasyon mantığı internet bağlantısı olmadan da çalışır.
 
 
 ---
@@ -44,39 +37,44 @@ Süre hesaplama ve simülasyon mantığı internet olmadan da çalışır
 Navİzban;
 
 * İZBAN hattını daha görsel ve anlaşılır hâle getirmek
-* Yolculuk süresini hızlıca görmek
-* Kendi başına çalışan, sade bir simülasyon sunmak
+* Kullanıcının bulunduğu konuma göre yolculuk süresini hızlıca hesaplamak
+* Gerçek konum verisiyle desteklenen sade bir tren simülasyonu sunmak
 
 amacıyla geliştirilmiştir.
 
 
 ---
 
-# 🧭 UI Kullanım Kılavuzu
+# 📱 Arayüz
 
-Uygulamanın üst bölümünde yer alan iki spinner üzerinden biniş (üstte) ve varış (altta) durakları seçilir. Kullanıcı bu seçimleri yaptıktan sonra, yolculuğa ait tahmini süre otomatik olarak hesaplanır ve ekranın alt kısmında görüntülenir.
+Uygulama açıldığında kullanıcının mevcut konumu GPS üzerinden alınır. Bu konum bilgisi kullanılarak seçilen istasyona kalan süre otomatik olarak belirlenir.
 
-Ekranın orta bölümünde bir harita yer alır. Bu harita, yalnızca görsel detaylarının doğru şekilde yüklenebilmesi için internet bağlantısı kullanır. Uygulamanın süre hesaplama ve simülasyon mantığı internet bağlantısına bağlı değildir.
+Varış durağı, ekranın üst bölümünde yer alan spinner üzerinden seçilir. Seçim yapıldıktan sonra yolculuğa ait tahmini süre otomatik olarak hesaplanır ve alt bilgi panelinde görüntülenir.
 
-Alt bölümde bulunan kontrol barı, kullanıcı tarafından gizlenip tekrar gösterilebilir. Bu bar üzerinden:
+Ekranın orta bölümünde yer alan harita, trenin konum ve hareketini animasyonlu bir imleç ile gösterir. Harita yalnızca görsel detayların doğru şekilde yüklenmesi için internet bağlantısı kullanır.
 
-Yolculuğun tahmini kalan süresi takip edilebilir
+Alt bölümde bulunan kontrol barı kullanıcı tarafından gizlenip tekrar gösterilebilir. Bu bar üzerinden:
 
-Tren hareketi tek bir butonla başlatılıp sonlandırılabilir
+- Tahmini kalan süre dakika dakika takip edilir  
+- Tren simülasyonu tek bir butonla başlatılıp sonlandırılır  
 
+Simülasyon sırasında:
 
-Uygulama, tahmini varış süresi ve tren imlecinin hareketi için GPS kullanmaz. Tüm hesaplamalar bu sürümde şimdilik manuel simülasyon mantığıyla çalışır.
+- GPS verisi sadece her dakika güncellenir. Bu dakikalar arası uygulama tahmini konum kullanır.
+- Kalan süre bu verilere göre yeniden hesaplanır  
+- Tren imleci harita üzerinde eşzamanlı olarak hareket eder  
 
-Kullanıcı, spinnerlar üzerinden biniş ve varış duraklarını seçer. Alt bardaki bilgi alanında yolculuğun tahmini süresi görüntülenir. Kullanıcı tren hareket ettiğinde "Başla" butonuna basar, tren imleci harita üzerinde eşzamanlı olarak hareket etmeye başlar ve tahmini süre dakika dakika azalır.
+Ayrıca Navizban, pil optimizasyonu kapatıldığı takdirde arkaplanda çalışabilir ve bildirim kutucuğunda hedef istasyona kalan yolu gösterebilir.
 
-GPS kullanılmadığı için, tren imlecinin konumu duraklara erken veya geç varmış gibi görünebilir. Herhangi bir gecikme olmadığı varsayıldığında, tren imleci seçilen varış durağına hesaplanan tahmini sürede ulaşır.
+GPS verisi yalnızca referans amaçlı kullanılır. Tren imlecinin konumu birebir gerçek tren konumunu temsil etmeyebilir; ancak seçilen varış durağına, hesaplanan tahmini süre sonunda ulaşacak şekilde her dakika güncellenir.
+
 
 
 ---
 
 # 🤝 Katkı
 
-Geri bildirimlere ve önerilere açıktır.
+Geri bildirimlere ve önerilere açıktır.  
 Issue açabilir veya pull request gönderebilirsin.
 
 
@@ -84,5 +82,5 @@ Issue açabilir veya pull request gönderebilirsin.
 
 # 📜 Lisans
 
-Açık kaynak.
+Açık kaynak.  
 Kullanmak, incelemek ve geliştirmek serbesttir.
