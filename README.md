@@ -81,7 +81,21 @@ Issue açabilir veya pull request gönderebilirsin.
 
 ---
 
+# ✉️ İletişim
+
+Benimle **navizban@gmail.com** e-posta adresi üzerinden iletişime geçebilirsiniz.
+
+
+---
+
 # 📜 Lisans
 
 Açık kaynak.  
 Kullanmak, incelemek ve geliştirmek serbesttir.
+
+
+---
+
+# ⚠️ Önemli Not
+
+Bu uygulama üçüncü taraf uygulamasıdır, resmi değildir. İzmir Büyükşehir Belediyesi veya İzmir Teknoloji ile herhangi bir bağlantısı yoktur.
