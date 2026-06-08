@@ -1,0 +1,333 @@
+# Navizban'ı geliştir
+
+> ## Navizban: İZBAN (İzmir Banliyö A.Ş.) Tren Navigasyon ve Takip Uygulaması
+>  1. Amaç
+> 		 Kullanıcıların GPS verileriyle çalışan İzban treninin gerçek konumu ve durak-durak haritalandırılmış eşzamanlı ve verimli bir navigasyon sistemi yapmak.
+>  2. Mantık
+> * 3 kullanıcının olduğunu varsayalım: A, B ve C.
+> * Aliağa, Hatundere ve Menemen istasyonları arası sırayla 15 ve 7 dk diyelim.
+> * A kullanıcısı, Aliağa istasyonundan Menemen istasyonuna gitmek üzere 12:30 saatinde trene binerek Navizban uygulamasında navigasyonu başlattı. Telefonunda varış istasyonuna kalan süre 22dk. olarak görüyor.
+> * B kullanıcısı Hatundere istasyonundan Menemen istasyonuna gitmek üzere trenin gelmesini bekliyor ve 12:30'da Navizban uygulamasına bakıyor. A kullanıcısının sağladığı GPS verisine göre, gelmek üzere olan trenin konumunu ve varış süresini (15dk. kaldı) görüyor. 15dk. sonra B kullanıcısı, A kullanıcısıyla aynı trene bindiğinde Menemen'e navigasyon başlatıyor ve kalan sürenin 7dk. olduğunu görüyor (A kullanıcısı da aynı şekilde)
+> * C kullanıcısı Menemen'de 12:30'da kalkan trenin varış süresini 22dk. olarak görüyor.
+> * Kullanıcının GPS verilerinin diğer kullanıcılarla paylaşımı, KVKK ihlali olmaması amacıyla kullanıcı sadece uygulamaya girerken sorulan şart ve koşullar ekranını kabul ederse geçerli olacak.
+> 3) Prompt
+> Senden yapmanı istediğim şey, repodaki zip dosyası içerisindeki bu yarım kalmış projeyi anlattığım mantığa göre geliştirip kullanıma tamamen hazır hale getirmek. Repodaki zip dosyası içerisinde, Navizban uygulamasının Replit ile geliştirilmiş versiyonu bulunmaktadır. Reponun releases kısmında ise Sketchware Pro ve ChatGPT ile geliştirilmiş, buglı ve çalışmayan versiyon bulunmaktadır. Uygulamanın Replit ve Releases versiyonlarına ayrıntılı bir şekilde göz at, navigasyon mantığının nasıl çalıştığını kavra ve uygulamayı sadece Replit versiyonu üzerinde geliştirerek son halini repoda tamamen açık kaynaklı bir şekilde sun. Android ve iOS buildlerini oluştur. Ayrıca Cloudflare'e bağladığım namecheap.com'dan aldığım, reponun Github Pages'ine bağlayacağım "https://navizban.xyz" domaininde uygulamayı tanıt ve buildleri indirme sayfası da oluştur. (Pages sayfasını nasıl satın aldığım domaine bağlayacağım hakkında rehberlik etmeni istiyorum) Bu versiyonun ismi: Navizban v1.2 Beta
+
+<details><summary>48 previous messages</summary>
+
+> Büyük bir iş ama çekirdeği net: önce mevcut Replit paketini ve varsa release izlerini okuyup mimariyi anlayacağım, sonra çalışır sürümü yalnız o taban üzerinde toparlayacağım. Android/iOS build konusu repo teknolojisine bağlı olduğu için onu da erken teşhis edeceğim.
+>
+> <details><summary>Explored 1 search, 1 list, ran 2 commands</summary>
+>
+> - Ran `pwd && ls -la`
+>
+> <details><summary>Explored 1 search, 1 list</summary>
+>
+> - Searched for `*.zip` in `.`
+> - Listed files
+>
+> </details>
+>
+> - Ran `git status --short && git remote -v && git branch --show-current`
+>
+> </details>
+>
+> `rg` bu ortamda yok, o yüzden hızlıca `find`/`unzip` ile ilerliyorum. Zip tek büyük kaynak gibi görünüyor; remote release tarafını da ayrıca doğrulayacağım.
+>
+> <details><summary>Explored 1 file, ran 3 commands, searched web 2 times</summary>
+>
+> - Ran `unzip -l "Replit Navizban-Clone.zip" | sed -n '1,180p'`
+>
+> - Ran `file "Replit Navizban-Clone.zip" logo.png v1.1beta_screenshots.jpg`
+>
+> <details><summary>Explored 1 file</summary>
+>
+> - Read `./README.md`
+>
+> </details>
+>
+> - Ran `git ls-remote --tags origin`
+>
+> <details><summary>Searched web 2 times</summary>
+>
+> - Searched web for `https://github.com/araswqm/navizban/releases`
+> - Searched web for `https://api.github.com/repos/araswqm/navizban/releases`
+>
+> </details>
+>
+> </details>
+>
+> GitHub releases say v1.1 Beta, mevcut eski Android odaklı simülasyonun “GPS referanslı” ama ortak tren verisi paylaşımı olmayan hali. Şimdi zip’i ayrı bir çalışma klasörüne açıp Replit sürümünün gerçek dosya yapısını okuyacağım.
+>
+> <details><summary>Ran 4 commands</summary>
+>
+> - Ran `zipinfo -1 "Replit Navizban-Clone.zip" | grep -v '^Navizban-Clone/.git/' | sed -n '1,240p'`
+> - Ran `zipinfo -1 "Replit Navizban-Clone.zip" | grep -E 'package.json|app.json|eas.json|android/|ios/|src/|server|firebase|supabase|README|LICENSE|pages|public|vite|expo|metro|gradle|Podfile' | grep -v '^Navizban-Clone/.git/' | sed -n '1,260p'`
+> - Ran `curl -L --silent https://api.github.com/repos/araswqm/navizban/releases | sed -n '1,220p'`
+> - Ran `git ls-remote --heads origin`
+>
+> </details>
+>
+> Zip içinde Replit çalışma ortamının tamamı var; `.local` içindeki paket deposu ve beceri şablonları asıl projeyi gömüyor. Şimdi yalnız uygulama kaynaklarını ayırıp temiz bir repo yapısına taşıyacağım.
+>
+> <details><summary>Ran 4 commands</summary>
+>
+> - Ran `zipinfo -1 "Replit Navizban-Clone.zip" | grep -v '^Navizban-Clone/\.git/' | grep -v '^Navizban-Clone/\.local/' | grep -v '^Navizban-Clone/\.config/' | grep -v '^Navizban-Clone/\.agents/' | sed -n '1,260p'`
+> - Ran `zipinfo -1 "Replit Navizban-Clone.zip" | grep -v '^Navizban-Clone/\.git/' | grep -v '^Navizban-Clone/\.local/' | grep -v '^Navizban-Clone/\.config/' | grep -v '^Navizban-Clone/\.agents/' | awk -F/ 'NF>=2 {print $2}' | sort -u | sed -n '1,200p'`
+> - Ran `zipinfo -1 "Replit Navizban-Clone.zip" | grep -E '^Navizban-Clone/(app|src|components|constants|hooks|server|public|assets|android|ios|package.json|package-lock.json|pnpm-lock.yaml|yarn.lock|app.json|eas.json|tsconfig.json|babel.config.js|metro.config.js|vite.config|index|README|LICENSE)' | sed -n '1,320p'`
+> - Ran `zipinfo -1 "Replit Navizban-Clone.zip" | grep -E 'Navizban-Clone/(package.json|app.json|eas.json|App\.|index\.|server/|src/|app/|components/|constants/|hooks/|public/|assets/|android/|ios/)' | grep -v '^Navizban-Clone/\.local/' | sed -n '1,320p'`
+>
+> </details>
+>
+> Asıl Replit uygulaması `artifacts/mobile` altında bir Expo/React Native proje; yanında basit API server ve mockup sandbox var. Kullanıcının istediği mobil uygulama mantığını o Expo projesinde geliştirmek en doğru hat olacak.
+>
+> Uygulamaya dokunmadan önce birkaç çekirdek dosyayı okuyorum: rota sabitleri, context, ana ekran, harita bileşeni ve build ayarları. Buradan ortak GPS verisini nerede modelleyeceğimizi netleştireceğim.
+>
+> <details><summary>Ran 6 commands</summary>
+>
+> - Ran `unzip -p "Replit Navizban-Clone.zip" "Navizban-Clone/package.json"`
+> - Ran `unzip -p "Replit Navizban-Clone.zip" "Navizban-Clone/artifacts/mobile/context/NavizbanContext.tsx"`
+> - Ran `unzip -p "Replit Navizban-Clone.zip" "Navizban-Clone/artifacts/mobile/package.json"`
+> - Ran `unzip -p "Replit Navizban-Clone.zip" "Navizban-Clone/artifacts/mobile/app/(tabs)/index.tsx"`
+> - Ran `unzip -p "Replit Navizban-Clone.zip" "Navizban-Clone/artifacts/mobile/constants/izban.ts"`
+> - Ran `unzip -p "Replit Navizban-Clone.zip" "Navizban-Clone/artifacts/mobile/constants/route.ts"`
+>
+> </details>
+>
+> Mevcut context iyi bir başlangıç: GPS konumunu raya projekte ediyor, kalan süreyi route indeksine göre hesaplıyor, ama veri yalnız cihaz içinde kalıyor. v1.2 için buna açık rıza kapısı, anonim tren paylaşımı, bekleyen yolcu görünümü ve sunucu API’si eklemek gerekiyor.
+>
+> <details><summary>Ran 6 commands</summary>
+>
+> - Ran `unzip -p "Replit Navizban-Clone.zip" "Navizban-Clone/artifacts/mobile/components/TrainMap.web.tsx"`
+> - Ran `unzip -p "Replit Navizban-Clone.zip" "Navizban-Clone/artifacts/mobile/components/InfoPanel.tsx"`
+> - Ran `unzip -p "Replit Navizban-Clone.zip" "Navizban-Clone/artifacts/mobile/components/StationPicker.tsx"`
+> - Ran `unzip -p "Replit Navizban-Clone.zip" "Navizban-Clone/artifacts/mobile/components/TrainMap.native.tsx"`
+> - Ran `unzip -p "Replit Navizban-Clone.zip" "Navizban-Clone/artifacts/mobile/components/TopBar.tsx"`
+> - Ran `unzip -p "Replit Navizban-Clone.zip" "Navizban-Clone/artifacts/mobile/app.json"`
+>
+> </details>
+>
+> Mobil tarafta ayrıca web haritası var, yani GitHub Pages için yalnız tanıtım değil çalışan web deneyimi veya indirme sayfası da üretilebilir. Önce küçük API sunucusunu kontrol edeceğim; ortak tren konumu paylaşımı için orayı kullanabiliriz.
+>
+> <details><summary>Ran 12 commands</summary>
+>
+> - Ran `unzip -p "Replit Navizban-Clone.zip" "Navizban-Clone/artifacts/api-server/package.json"`
+> - Ran `unzip -p "Replit Navizban-Clone.zip" "Navizban-Clone/artifacts/api-server/src/app.ts"`
+> - Ran `unzip -p "Replit Navizban-Clone.zip" "Navizban-Clone/artifacts/api-server/src/index.ts"`
+> - Ran `unzip -p "Replit Navizban-Clone.zip" "Navizban-Clone/artifacts/api-server/src/routes/index.ts"`
+> - Ran `unzip -p "Replit Navizban-Clone.zip" "Navizban-Clone/lib/api-spec/openapi.yaml"`
+> - Ran `unzip -p "Replit Navizban-Clone.zip" "Navizban-Clone/replit.md"`
+> - Ran `unzip -p "Replit Navizban-Clone.zip" "Navizban-Clone/artifacts/mobile/scripts/build.js"`
+> - Ran `unzip -p "Replit Navizban-Clone.zip" "Navizban-Clone/artifacts/mobile/.gitignore"`
+> - Ran `unzip -p "Replit Navizban-Clone.zip" "Navizban-Clone/artifacts/mobile/server/serve.js"`
+> - Ran `unzip -p "Replit Navizban-Clone.zip" "Navizban-Clone/artifacts/mobile/server/templates/landing-page.html"`
+> - Ran `unzip -p "Replit Navizban-Clone.zip" "Navizban-Clone/artifacts/mobile/eas.json"`
+> - Ran `unzip -p "Replit Navizban-Clone.zip" "Navizban-Clone/.gitignore"`
+>
+> </details>
+>
+> Şimdi zip’ten temiz monorepo kaynaklarını köke çıkaracağım: mobil Expo uygulaması, API server, paylaşılan lib’ler ve build konfigürasyonu. Replit cache’leri, `.git`, `.local`, dist çıktıları ve paket depolarını taşımıyorum.
+>
+> <details><summary>Ran 1 command</summary>
+>
+> - Ran `rm -rf .replit_extract && mkdir -p .replit_extract && unzip -q "Replit Navizban-Clone.zip" \
+>   "Navizban-Clone/.gitignore" \
+>   "Navizban-Clone/.npmrc" \
+>   "Navizban-Clone/package.json" \
+>   "Navizban-Clone/pnpm-lock.yaml" \
+>   "Navizban-Clone/pnpm-workspace.yaml" \
+>   "Navizban-Clone/replit.md" \
+>   "Navizban-Clone/tsconfig.base.json" \
+>   "Navizban-Clone/tsconfig.json" \
+>   "Navizban-Clone/artifacts/api-server/*" \
+>   "Navizban-Clone/artifacts/mobile/*" \
+>   "Navizban-Clone/lib/*" \
+>   "Navizban-Clone/scripts/*" \
+>   "Navizban-Clone/attached_assets/*" \
+>   -x "*/.git/*" "*/.local/*" "*/.config/*" "*/.expo/*" "*/node_modules/*" "*/dist/*" "*.tsbuildinfo" "*/.replit-artifact/*" \
+>   -d .replit_extract && cp -a .replit_extract/Navizban-Clone/. .`
+>
+> </details>
+>
+> Kaynaklar köke alındı. Şimdi çıkarılan proje üzerinde bağımlılık ve dosya bütünlüğünü kontrol edip düzenlemeye başlamadan önce kısa bir yapı turu yapıyorum.
+>
+> <details><summary>Explored 2 lists, ran 2 commands</summary>
+>
+> <details><summary>Explored 1 list</summary>
+>
+> - Listed files in `.`
+>
+> </details>
+>
+> - Ran `node --version && pnpm --version && npm --version`
+>
+> - Ran `git status --short`
+>
+> <details><summary>Explored 1 list</summary>
+>
+> - Listed files in `mobile`
+>
+> </details>
+>
+> </details>
+>
+> Çıkarma klasörü geçiciydi; onu temizliyorum. Kök artık Expo monorepo olarak kurulabilir durumda görünüyor, sırada modelleme ve kod değişiklikleri var.
+>
+> <details><summary>Explored 6 files, ran 1 command</summary>
+>
+> - Ran `rm -rf .replit_extract`
+>
+> <details><summary>Explored 6 files</summary>
+>
+> - Read `./artifacts/mobile/tsconfig.json`
+> - Read `./pnpm-workspace.yaml`
+> - Read `./tsconfig.base.json`
+> - Read `./artifacts/mobile/app/_layout.tsx`
+> - Read `./artifacts/mobile/metro.config.js`
+> - Read `./artifacts/mobile/context/ThemeContext.tsx`
+>
+> </details>
+>
+> </details>
+>
+> Uygulamanın ortak tren konumu mantığını kodlarken iki katman kuracağım: küçük bir paylaşılan İZBAN zaman/istasyon çekirdeği ve API’de anonim, TTL’li tren telemetri uçları. Mobil taraf ise yalnız açık rıza varsa “raya oturtulmuş” tren konumunu paylaşacak; ham kullanıcı kimliği paylaşılmayacak.
+>
+> Önce paylaşılan çekirdek paketi ekliyorum. Böylece mobil uygulama ve API aynı istasyon sırası/süre hesabını kullanacak; ileride süre güncellemek gerekirse iki yerde ayrışmayacak.
+>
+> <details><summary>Created 3 files</summary>
+>
+> - Wrote `./lib/navizban-core/package.json` (+19 -0)
+> - Wrote `./lib/navizban-core/src/index.ts` (+153 -0)
+> - Wrote `./lib/navizban-core/tsconfig.json` (+11 -0)
+>
+> </details>
+>
+> Mobil sabitleri artık bu çekirdeği kullanacak şekilde bağlıyorum; harita rotasına özel fonksiyonlar mobil dosyada kalacak.
+>
+> <details><summary>Edited 1 file</summary>
+>
+> - Wrote `./artifacts/mobile/constants/izban.ts` (+12 -91)
+> - Wrote `./artifacts/mobile/constants/izban.ts` (+13 -0)
+>
+> </details>
+>
+> Şimdi workspace bağımlılıklarını bağlayacağım: API ve mobil paket aynı `@workspace/navizban-core` paketine referans verecek; mobilde AsyncStorage da gerçek runtime bağımlılığına alınacak.
+>
+> <details><summary>Edited 3 files, explored 3 files</summary>
+>
+> <details><summary>Explored 3 files</summary>
+>
+> - Read `./artifacts/mobile/package.json`
+> - Read `./tsconfig.json`
+> - Read `./artifacts/api-server/package.json`
+>
+> </details>
+>
+> - Wrote `./artifacts/api-server/package.json` (+2 -1)
+> - Wrote `./artifacts/mobile/package.json` (+3 -2)
+> - Wrote `./tsconfig.json` (+3 -0)
+>
+> </details>
+>
+> Bağlantı tamam. Sırada API uçlarını ekliyorum: aktif trenler bellekte kısa süre tutulacak, yolculuk bittiğinde silinecek ve sorgular istasyona yaklaşan trenleri ETA ile döndürecek.
+>
+> <details><summary>Created 1 file, edited 2 files, explored 3 files</summary>
+>
+> <details><summary>Explored 3 files</summary>
+>
+> - Read `./artifacts/api-server/tsconfig.json`
+> - Read `./artifacts/api-server/build.mjs`
+> - Read `./artifacts/api-server/src/routes/health.ts`
+>
+> </details>
+>
+> - Wrote `./artifacts/api-server/src/routes/index.ts` (+2 -0)
+> - Wrote `./artifacts/api-server/src/routes/trains.ts` (+269 -0)
+> - Wrote `./artifacts/api-server/tsconfig.json` (+3 -0)
+>
+> </details>
+>
+> API tarafı hazır. Mobil tarafta bu API’ye konuşan küçük servisleri ekliyorum; bağlantı yoksa sessizce offline/simülasyon moduna düşecek.
+>
+> <details><summary>Created 1 file, edited 1 file</summary>
+>
+> - Wrote `./artifacts/mobile/services/trainTelemetry.ts` (+107 -0)
+> - Wrote `./artifacts/mobile/services/trainTelemetry.ts` (+2 -0)
+>
+> </details>
+>
+> Context’i genişletiyorum: rıza durumu, anonim paylaşım, canlı tren sorgusu ve aktif yolculuk telemetrisi burada yönetilecek. Konum izni artık şartlar ekranı kabul edilmeden istenmeyecek.
+>
+> <details><summary>Edited 1 file</summary>
+>
+> - Wrote `./artifacts/mobile/context/NavizbanContext.tsx` (+19 -0)
+> - Wrote `./artifacts/mobile/context/NavizbanContext.tsx` (+17 -0)
+>
+> </details>
+>
+> Rıza depolama ve anonim yolculuk kimliği için küçük yardımcılar ekliyorum; kimlik her yolculukta üretilen geçici bir değer olacak.
+>
+> <details><summary>Edited 1 file</summary>
+>
+> - Wrote `./artifacts/mobile/context/NavizbanContext.tsx` (+16 -0)
+>
+> </details>
+>
+> Şartlar kabul edilmeden konum/telemetri çalışmayacak şekilde provider akışını bağlıyorum.
+>
+> <details><summary>Edited 1 file</summary>
+>
+> - Wrote `./artifacts/mobile/context/NavizbanContext.tsx` (+47 -0)
+>
+> </details>
+>
+> Başlangıçtaki konum izni çağrısını şartlar sonrasına taşıyorum; bu, KVKK tarafındaki ana davranış sınırı.
+>
+> <details><summary>Edited 1 file</summary>
+>
+> - Wrote `./artifacts/mobile/context/NavizbanContext.tsx` (+2 -1)
+>
+> </details>
+>
+> Aktif yolculuk telemetrisi paylaşımı için gönder/al-kapat akışını ekliyorum. Paylaşılan veri ham GPS değil, haritadaki tren imlecinin raya oturtulmuş konumu ve hat üzerindeki dakika ilerlemesi.
+>
+> <details><summary>Edited 1 file</summary>
+>
+> - Wrote `./artifacts/mobile/context/NavizbanContext.tsx` (+40 -1)
+> - Wrote `./artifacts/mobile/context/NavizbanContext.tsx` (+1 -0)
+>
+> </details>
+>
+> Yolculuk başladıktan sonra paylaşım açıksa 15 saniyede bir canlı tren raporu gönderilecek; kapalıysa uygulama sadece yerel navigasyon yapacak.
+>
+> <details><summary>Edited 1 file</summary>
+>
+> - Wrote `./artifacts/mobile/context/NavizbanContext.tsx` (+23 -0)
+> - Wrote `./artifacts/mobile/context/NavizbanContext.tsx` (+2 -1)
+> - Wrote `./artifacts/mobile/context/NavizbanContext.tsx` (+2 -1)
+>
+> </details>
+>
+> Canlı tren sorgusunu da bağlıyorum: kullanıcı ister manuel biniş seçsin ister GPS ile istasyonda olsun, seçili biniş istasyonuna yaklaşan anonim trenler çekilecek.
+>
+> <details><summary>Edited 1 file</summary>
+>
+> - Wrote `./artifacts/mobile/context/NavizbanContext.tsx` (+37 -0)
+>
+> </details>
+>
+> System error
+>
+> You've hit your usage limit. Upgrade to Plus to continue using Codex (https://chatgpt.com/explore/plus), or try again at Jul 7th, 2026 7:40 PM.
+>
+> <details><summary>Plan</summary>
+>
+> - [x] Repo yapısını, zip dosyasını ve mevcut uygulama teknolojisini incele
+> - [x] Replit sürümünün navigasyon/GPS veri akışını kavra
+> - [ ] Navizban v1.2 Beta geliştirmelerini uygula
+> - [ ] Tanıtım ve indirme sayfasını hazırla
+> - [ ] Android/iOS build imkanını doğrula ve üret
+> - [ ] Testleri/buildleri çalıştırıp teslim özetini çıkar
+>
+> </details>
+</details>
