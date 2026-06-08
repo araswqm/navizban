@@ -1,0 +1,16 @@
+{
+  "name": "navizban-monorepo",
+  "version": "1.2.0-beta",
+  "private": true,
+  "scripts": {
+    "build": "pnpm -r build",
+    "clean": "pnpm -r clean",
+    "lint": "pnpm -r lint",
+    "mobile": "pnpm --filter @workspace/mobile",
+    "api": "pnpm --filter @workspace/api-server",
+    "core": "pnpm --filter @workspace/navizban-core"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Navizban — İZBAN Tren Takip Uygulaması</title>
+  <meta name="description" content="Navizban, İZBAN (İzmir Banliyö A.Ş.) tren hattı için geliştirilmiş, GPS tabanlı gerçek zamanlı tren navigasyon ve takip uygulamasıdır.">
+  <meta property="og:title" content="Navizban — İZBAN Tren Takip">
+  <meta property="og:description" content="İZBAN trenlerini harita üzerinde canlı takip edin, varış sürenizi öğrenin.">
+  <meta property="og:image" content="https://navizban.xyz/logo.png">
+  <meta name="theme-color" content="#0D1117">
+  <style>
+    :root {
+      --bg: #0D1117;
+      --surface: #161B22;
+      --surface-light: #21262D;
+      --text: #E6EDF3;
+      --text-secondary: #8B949E;
+      --primary: #58A6FF;
+      --accent: #3FB950;
+      --warning: #D29922;
+      --error: #F85149;
+      --border: #30363D;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+    }
+    .container { max-width: 960px; margin: 0 auto; padding: 0 20px; }
+
+    /* Header */
+    header {
+      padding: 40px 0 20px;
+      text-align: center;
+      border-bottom: 1px solid var(--border);
+    }
+    .logo {
+      font-size: 3rem;
+      font-weight: 900;
+      background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      letter-spacing: -1px;
+    }
+    .tagline {
+      color: var(--text-secondary);
+      font-size: 1.15rem;
+      margin-top: 8px;
+    }
+    .version-badge {
+      display: inline-block;
+      background: var(--surface-light);
+      padding: 4px 14px;
+      border-radius: 20px;
+      font-size: 0.85rem;
+      margin-top: 10px;
+      color: var(--primary);
+      border: 1px solid var(--border);
+    }
+
+    /* Navigation */
+    nav {
+      display: flex;
+      justify-content: center;
+      gap: 24px;
+      padding: 16px 0;
+      border-bottom: 1px solid var(--border);
+      flex-wrap: wrap;
+    }
+    nav a {
+      color: var(--text-secondary);
+      text-decoration: none;
+      font-size: 0.95rem;
+      font-weight: 500;
+      padding: 6px 0;
+      border-bottom: 2px solid transparent;
+      transition: color 0.2s, border-color 0.2s;
+    }
+    nav a:hover { color: var(--primary); border-bottom-color: var(--primary); }
+
+    /* Hero */
+    .hero {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 80px 0 60px;
+      gap: 30px;
+    }
+    .hero h2 {
+      font-size: 2.2rem;
+      text-align: center;
+      max-width: 700px;
+    }
+    .hero h2 span { color: var(--primary); }
+    .hero p {
+      color: var(--text-secondary);
+      font-size: 1.1rem;
+      text-align: center;
+      max-width: 600px;
+    }
+    .hero-buttons {
+      display: flex;
+      gap: 16px;
+      flex-wrap: wrap;
+      justify-content: center;
+      margin-top: 10px;
+    }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 14px 28px;
+      border-radius: 12px;
+      font-size: 1rem;
+      font-weight: 600;
+      text-decoration: none;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .btn:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.3); }
+    .btn-primary { background: var(--accent); color: #FFFFFF; }
+    .btn-secondary { background: var(--surface-light); color: var(--text); border: 1px solid var(--border); }
+    .btn-ios { background: var(--surface-light); color: var(--text-secondary); border: 1px solid var(--border); cursor: default; }
+
+    /* Features */
+    .section-title {
+      text-align: center;
+      font-size: 1.8rem;
+      margin-bottom: 40px;
+      padding-top: 40px;
+    }
+    .features {
+      padding: 40px 0 60px;
+    }
+    .feature-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 20px;
+    }
+    .feature-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px;
+      transition: transform 0.2s, border-color 0.2s;
+    }
+    .feature-card:hover {
+      transform: translateY(-3px);
+      border-color: var(--primary);
+    }
+    .feature-icon { font-size: 2rem; margin-bottom: 12px; }
+    .feature-card h3 { font-size: 1.1rem; margin-bottom: 8px; }
+    .feature-card p { color: var(--text-secondary); font-size: 0.9rem; line-height: 1.5; }
+
+    /* How it works */
+    .how-it-works {
+      padding: 40px 0 60px;
+    }
+    .steps {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+      counter-reset: step;
+    }
+    .step {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      text-align: center;
+      position: relative;
+    }
+    .step-number {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: var(--primary);
+      color: #FFFFFF;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 1rem;
+      margin: 0 auto 12px;
+    }
+    .step h4 { margin-bottom: 8px; }
+    .step p { color: var(--text-secondary); font-size: 0.85rem; }
+
+    /* Download section */
+    .download-section {
+      padding: 40px 0 60px;
+      text-align: center;
+      background: var(--surface);
+      border-radius: 20px;
+      margin: 20px 0;
+      border: 1px solid var(--border);
+    }
+    .download-section h2 { margin-bottom: 12px; }
+    .download-section p { color: var(--text-secondary); margin-bottom: 30px; }
+    .download-buttons {
+      display: flex;
+      justify-content: center;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+    .build-info {
+      margin-top: 30px;
+      padding: 16px;
+      background: var(--surface-light);
+      border-radius: 8px;
+      display: inline-block;
+    }
+    .build-info h4 { color: var(--text-secondary); margin-bottom: 12px; }
+    .build-info details {
+      text-align: left;
+      color: var(--text-secondary);
+      font-size: 0.85rem;
+    }
+    .build-info summary { cursor: pointer; color: var(--primary); font-weight: 500; }
+    .build-info code {
+      display: block;
+      background: var(--bg);
+      padding: 8px 12px;
+      border-radius: 6px;
+      margin: 6px 0;
+      font-size: 0.8rem;
+      border: 1px solid var(--border);
+    }
+
+    /* Privacy */
+    .privacy {
+      padding: 40px 0;
+    }
+    .privacy-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px;
+      margin-bottom: 20px;
+    }
+    .privacy-card h3 { margin-bottom: 12px; color: var(--primary); }
+    .privacy-card p, .privacy-card li { color: var(--text-secondary); }
+    .privacy-card ul { padding-left: 20px; }
+    .privacy-card li { margin-bottom: 6px; }
+
+    /* Domain setup guide */
+    .guide {
+      padding: 40px 0;
+    }
+    .guide-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px;
+      margin-bottom: 20px;
+    }
+    .guide-card h3 { margin-bottom: 16px; color: var(--primary); }
+    .guide-card ol { padding-left: 20px; }
+    .guide-card li { color: var(--text-secondary); margin-bottom: 12px; line-height: 1.5; }
+    .guide-card code {
+      background: var(--surface-light);
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 0.9rem;
+      border: 1px solid var(--border);
+    }
+
+    /* Footer */
+    footer {
+      text-align: center;
+      padding: 30px 0;
+      border-top: 1px solid var(--border);
+      color: var(--text-secondary);
+      font-size: 0.85rem;
+    }
+    footer a { color: var(--primary); text-decoration: none; }
+    footer a:hover { text-decoration: underline; }
+    .footer-links { display: flex; justify-content: center; gap: 20px; margin-top: 12px; flex-wrap: wrap; }
+
+    @media (max-width: 600px) {
+      .logo { font-size: 2rem; }
+      .hero h2 { font-size: 1.5rem; }
+      .section-title { font-size: 1.4rem; }
+      .btn { padding: 12px 20px; font-size: 0.9rem; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- Header -->
+    <header>
+      <div class="logo">🚆 Navizban</div>
+      <p class="tagline">İZBAN (İzmir Banliyö A.Ş.) için akıllı tren navigasyonu ve anonim takip uygulaması</p>
+      <span class="version-badge">v1.2 Beta — Açık Kaynak</span>
+    </header>
+
+    <!-- Navigation -->
+    <nav>
+      <a href="#ozellikler">Özellikler</a>
+      <a href="#indir">İndir</a>
+      <a href="#nasil-calisir">Nasıl Çalışır</a>
+      <a href="#gizlilik">Gizlilik</a>
+      <a href="#domain">Domain Kurulumu</a>
+      <a href="https://github.com/araswqm/navizban" target="_blank">GitHub</a>
+    </nav>
+
+    <!-- Hero -->
+    <section class="hero">
+      <h2>📡 <span>Gerçek Zamanlı</span> Tren Takibi</h2>
+      <p>
+        Navizban ile İZBAN trenlerinin konumunu harita üzerinde canlı olarak takip edin,
+        varış sürenizi dakika hassasiyetinde öğrenin ve diğer yolcularla anonim tren konumu paylaşın.
+      </p>
+      <div class="hero-buttons">
+        <a href="#indir" class="btn btn-primary">📱 Android APK İndir</a>
+        <a href="https://github.com/araswqm/navizban" target="_blank" class="btn btn-secondary">💻 Kaynak Kodu</a>
+      </div>
+    </section>
+
+    <!-- Features -->
+    <section class="features" id="ozellikler">
+      <h2 class="section-title">✨ Özellikler</h2>
+      <div class="feature-grid">
+        <div class="feature-card">
+          <div class="feature-icon">📍</div>
+          <h3>GPS Konum Tespiti</h3>
+          <p>Bulunduğunuz istasyonu otomatik algılayın. GPS yoksa manuel seçim de mümkün.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">⏱️</div>
+          <h3>Gerçek Zamanlı Süre</h3>
+          <p>Varış istasyonunuza kalan süreyi her dakika güncellenen hesaplama ile takip edin.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">🗺️</div>
+          <h3>Harita Üzerinde Takip</h3>
+          <p>Treninizin İZBAN hattı üzerindeki konumunu animasyonlu imleç ile haritada görün.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">🛡️</div>
+          <h3>KVKK Uyumlu</h3>
+          <p>6698 sayılı KVKK kapsamında verileriniz anonimleştirilir, açık rızanız olmadan hiçbir veri paylaşılmaz.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">👥</div>
+          <h3>Anonim Tren Paylaşımı</h3>
+          <p>Diğer yolcuların paylaştığı anonim tren konumlarını görün, siz de izin verirseniz konumunuzu paylaşın.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">🌙</div>
+          <h3>Karanlık Tema</h3>
+          <p>Göz yormayan koyu tema ile gece yolculuklarında rahat kullanım.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">📡</div>
+          <h3>Offline Çalışma</h3>
+          <p>İnternet bağlantısı olmadan da GPS takibi ve süre hesaplama çalışır.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">🔋</div>
+          <h3>Pil Dostu</h3>
+          <p>GPS her dakika güncellenir, arada tahmini konum kullanılır. Pil optimizasyonu açılabilir.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- How it works -->
+    <section class="how-it-works" id="nasil-calisir">
+      <h2 class="section-title">🎯 Nasıl Çalışır?</h2>
+      <div class="steps">
+        <div class="step">
+          <div class="step-number">1</div>
+          <h4>🚉 İstasyon Seçimi</h4>
+          <p>Biniş ve varış istasyonlarınızı seçin veya GPS ile otomatik tespit edin.</p>
+        </div>
+        <div class="step">
+          <div class="step-number">2</div>
+          <h4>▶️ Yolculuğu Başlat</h4>
+          <p>Treninize binince tek dokunuşla navigasyonu başlatın.</p>
+        </div>
+        <div class="step">
+          <div class="step-number">3</div>
+          <h4>🗺️ Canlı Takip</h4>
+          <p>Treniniz haritada ilerlesin, kalan süre otomatik güncellensin.</p>
+        </div>
+        <div class="step">
+          <div class="step-number">4</div>
+          <h4>🛡️ Paylaşım</h4>
+          <p>İsterseniz anonim tren konumunuzu diğer yolcularla paylaşın.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Download -->
+    <section class="download-section" id="indir">
+      <h2>📲 İndir</h2>
+      <p>Navizban v1.2 Beta — Tamamen ücretsiz ve açık kaynak</p>
+      <div class="download-buttons">
+        <a href="#" class="btn btn-primary">
+          📱 Android APK İndir
+        </a>
+        <a href="#" class="btn btn-ios">
+          🍎 iOS — Çok Yakında
+        </a>
+        <a href="https://github.com/araswqm/navizban/releases" target="_blank" class="btn btn-secondary">
+          📦 Tüm Sürümler
+        </a>
+      </div>
+
+      <div class="build-info">
+        <h4>🔧 Build Bilgileri</h4>
+        <details>
+          <summary>Kendiniz build etmek ister misiniz?</summary>
+          <code>git clone https://github.com/araswqm/navizban.git</code>
+          <code>cd navizban</code>
+          <code>pnpm install</code>
+          <code>pnpm --filter @workspace/mobile expo start</code>
+          <p style="margin-top: 8px;">Android APK için:</p>
+          <code>pnpm --filter @workspace/mobile build:android</code>
+          <p style="margin-top: 8px;">iOS için:</p>
+          <code>pnpm --filter @workspace/mobile build:ios</code>
+        </details>
+      </div>
+    </section>
+
+    <!-- Privacy -->
+    <section class="privacy" id="gizlilik">
+      <h2 class="section-title">🔒 Gizlilik</h2>
+      <div class="privacy-card">
+        <h3>KVKK Aydınlatma Metni</h3>
+        <p>Navizban, 6698 sayılı Kişisel Verilerin Korunması Kanunu (KVKK) kapsamında:</p>
+        <ul>
+          <li>Konum veriniz yalnızca tren konumunuzu haritada göstermek için kullanılır</li>
+          <li>İzin vermeniz durumunda, anonimleştirilmiş tren konumu veriniz diğer kullanıcıların bekledikleri trenin varış süresini görmesi için paylaşılır</li>
+          <li>Paylaşılan veri yalnızca "hangi duraktan hangi durağa giden trende kaçıncı dakikadasınız" bilgisidir, ham GPS veriniz paylaşılmaz</li>
+          <li>Hiçbir kişisel bilginiz (isim, e-posta, telefon) toplanmaz veya paylaşılmaz</li>
+          <li>Verileriniz yalnızca yolculuk süresince geçici olarak tutulur, yolculuk sonunda silinir</li>
+          <li>Dilediğiniz zaman ayarlardan konum paylaşımını kapatabilirsiniz</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- Domain Setup Guide -->
+    <section class="guide" id="domain">
+      <h2 class="section-title">🌐 navizban.xyz Domain Kurulum Rehberi</h2>
+      <div class="guide-card">
+        <h3>📋 Adım Adım: GitHub Pages'i kendi domaininize bağlama</h3>
+        <ol>
+          <li>
+            <strong>GitHub Pages'i etkinleştirin:</strong>
+            Reponuzda <code>Settings → Pages</code> bölümüne gidin.
+            "Source" olarak <code>Deploy from a branch</code> seçin,
+            branch olarak <code>main</code> ve klasör olarak <code>/docs</code> seçin.
+          </li>
+          <li>
+            <strong>Custom domain girin:</strong>
+            Aynı sayfada "Custom domain" alanına <code>navizban.xyz</code> yazın
+            ve "Save" butonuna tıklayın. GitHub size DNS kayıtlarını gösterecektir.
+          </li>
+          <li>
+            <strong>Cloudflare DNS ayarları:</strong>
+            Cloudflare Dashboard'da navizban.xyz domaininize gidin.
+            DNS ayarlarına aşağıdaki kayıtları ekleyin:
+            <code>
+              Tür: CNAME | Ad: @ | Hedef: araswqm.github.io | Proxy: DNS only
+            </code>
+            <code>
+              Tür: CNAME | Ad: www | Hedef: araswqm.github.io | Proxy: DNS only
+            </code>
+          </li>
+          <li>
+            <strong>Cloudflare SSL/TLS ayarı:</strong>
+            SSL/TLS bölümünden "Full (strict)" seçeneğini seçin.
+            Böylece HTTPS otomatik olarak çalışacaktır.
+          </li>
+          <li>
+            <strong>Bekleyin:</strong>
+            DNS değişikliklerinin yayılması 1-10 dakika sürebilir.
+            GitHub Pages sayfasında "DNS check successful" yazısını görmelisiniz.
+          </li>
+          <li>
+            <strong>Enforce HTTPS:</strong>
+            GitHub Pages ayarlarında "Enforce HTTPS" kutucuğunu işaretleyin.
+          </li>
+        </ol>
+      </div>
+      <div class="guide-card">
+        <h3>📌 Önemli Notlar</h3>
+        <ul>
+          <li>Cloudflare'de <strong>Proxy (turuncu bulut)</strong> değil, <strong>DNS only (gri bulut)</strong> kullanmalısınız. Aksi halde GitHub Pages çalışmaz.</li>
+          <li>GitHub Pages ayarlarında "Custom domain" alanını boş bırakmayın, aksi halde domain bağlantısı kopsa bile GitHub Pages çalışmaya devam eder.</li>
+          <li>Namecheap'te nameserver'ları Cloudflare'in verdiği nameserver'lara yönlendirdiğinizden emin olun.</li>
+          <li>APK dosyalarını GitHub Releases üzerinden yayınlayabilir ve bu sayfadan link verebilirsiniz.</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+      <div class="footer-links">
+        <a href="https://github.com/araswqm/navizban">GitHub</a>
+        <a href="https://github.com/araswqm/navizban/releases">Releases</a>
+        <a href="mailto:navizban@gmail.com">İletişim</a>
+        <a href="https://github.com/araswqm/navizban/issues">Hata Bildir</a>
+      </div>
+      <p style="margin-top: 12px;">🚆 Navizban v1.2 Beta — Açık Kaynak (MIT)</p>
+      <p style="margin-top: 4px;">&copy; 2024-2026 Navizban. İZMİR</p>
+      <p style="margin-top: 8px; font-size: 0.8rem;">
+        ⚠️ Bu uygulama üçüncü taraf uygulamasıdır, resmi değildir.
+        İzmir Büyükşehir Belediyesi veya İzmir Teknoloji ile herhangi bir bağlantısı yoktur.
+      </p>
+    </footer>
+  </div>
+</body>
+</html>

@@ -1,0 +1,158 @@
+openapi: "3.0.3"
+info:
+  title: Navizban API
+  version: "1.2.0-beta"
+  description: İZBAN tren telemetri paylaşım API'si
+
+servers:
+  - url: https://api.navizban.xyz
+    description: Production
+  - url: http://localhost:3001
+    description: Local development
+
+paths:
+  /api/health:
+    get:
+      summary: Sağlık kontrolü
+      responses:
+        "200":
+          description: API çalışıyor
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: { type: string }
+                  version: { type: string }
+                  timestamp: { type: string }
+                  uptime: { type: number }
+
+  /api/trains:
+    get:
+      summary: Aktif trenleri listele
+      parameters:
+        - name: station
+          in: query
+          schema:
+            type: string
+          description: İstasyona göre filtrele (opsiyonel)
+      responses:
+        "200":
+          description: Tren listesi
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  trains:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/TrainSummary"
+                  count: { type: integer }
+
+  /api/trains/{id}:
+    get:
+      summary: Tren detayı
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Tren detayı
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TrainDetail"
+        "404":
+          description: Tren bulunamadı
+
+    delete:
+      summary: Treni sil (yolculuk bittiğinde)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Silindi
+        "404":
+          description: Tren bulunamadı
+
+  /api/trains/{id}/heartbeat:
+    post:
+      summary: Tren telemetrisi gönder
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/HeartbeatPayload"
+      responses:
+        "200":
+          description: Güncellendi
+        "201":
+          description: Oluşturuldu
+        "400":
+          description: Geçersiz veri
+
+components:
+  schemas:
+    TrainSummary:
+      type: object
+      properties:
+        trainId: { type: string }
+        fromStation: { type: string }
+        toStation: { type: string }
+        currentStationIndex: { type: number }
+        etaMinutes: { type: number }
+        direction: { type: integer, enum: [1, -1] }
+        lastHeartbeat: { type: integer }
+
+    TrainDetail:
+      type: object
+      properties:
+        trainId: { type: string }
+        anonymousTripId: { type: string }
+        fromStation: { type: string }
+        toStation: { type: string }
+        fromIndex: { type: integer }
+        toIndex: { type: integer }
+        currentStationIndex: { type: number }
+        elapsedMinutes: { type: integer }
+        totalMinutes: { type: integer }
+        direction: { type: integer }
+        lastHeartbeat: { type: integer }
+
+    HeartbeatPayload:
+      type: object
+      required:
+        - anonymousTripId
+        - fromIndex
+        - toIndex
+      properties:
+        anonymousTripId:
+          type: string
+          description: Anonim yolculuk kimliği (her yolculukta yeniden oluşturulur)
+        fromIndex:
+          type: integer
+          description: Biniş istasyonu indeksi
+        toIndex:
+          type: integer
+          description: Varış istasyonu indeksi
+        elapsedMinutes:
+          type: integer
+          description: Yolculukta geçen dakika
+        totalMinutes:
+          type: integer
+          description: Toplam yolculuk süresi
+        stationIndex:
+          type: number
+          description: Mevcut istasyon indeksi (küsüratlı olabilir)

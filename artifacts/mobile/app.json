@@ -1,0 +1,53 @@
+{
+  "expo": {
+    "name": "Navizban",
+    "slug": "navizban",
+    "version": "1.2.0-beta",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "automatic",
+    "splash": {
+      "backgroundColor": "#0D1117"
+    },
+    "assetBundlePatterns": ["**/*"],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.navizban.app",
+      "config": {
+        "googleMapsApiKey": ""
+      },
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "Navizban, treninizin konumunu harita üzerinde göstermek için konum bilginizi kullanır.",
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "Navizban, treninizin konumunu harita üzerinde göstermek için konum bilginizi kullanır."
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#0D1117"
+      },
+      "package": "com.navizban.app",
+      "config": {
+        "googleMaps": {
+          "apiKey": ""
+        }
+      },
+      "permissions": [
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_COARSE_LOCATION",
+        "FOREGROUND_SERVICE_LOCATION"
+      ]
+    },
+    "plugins": [
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "Navizban, treninizin konumunu harita üzerinde göstermek için konum bilginizi kullanır.",
+          "locationWhenInUsePermission": "Navizban, treninizin konumunu harita üzerinde göstermek için konum bilginizi kullanır."
+        }
+      ]
+    ],
+    "extra": {
+      "apiBaseUrl": "https://api.navizban.xyz"
+    }
+  }
+}
