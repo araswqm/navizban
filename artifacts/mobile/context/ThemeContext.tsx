@@ -1,84 +1,56 @@
-import React, { createContext, useContext, useState, useCallback, useMemo } from "react";
-import { useColorScheme } from "react-native";
+import React, {
+  createContext,
+  useCallback,
+  useContext,
+  useRef,
+  useState,
+} from "react";
+import { Animated, useColorScheme } from "react-native";
 
-export type ThemeMode = "dark" | "light" | "system";
+import Colors, { ColorTheme, ThemeMode } from "@/constants/colors";
 
-interface ThemeContextType {
+interface ThemeContextValue {
   mode: ThemeMode;
-  isDark: boolean;
-  setMode: (mode: ThemeMode) => void;
-  toggle: () => void;
+  C: ColorTheme;
+  fadeAnim: Animated.Value;
+  toggleTheme: () => void;
 }
 
-const ThemeContext = createContext<ThemeContextType>({
-  mode: "dark",
-  isDark: true,
-  setMode: () => {},
-  toggle: () => {},
-});
+const ThemeContext = createContext<ThemeContextValue | null>(null);
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const system = useColorScheme();
-  const [mode, setModeState] = useState<ThemeMode>("dark");
+  const systemScheme = useColorScheme();
+  const [mode, setMode] = useState<ThemeMode>("light");
+  const fadeAnim = useRef(new Animated.Value(1)).current;
 
-  const setMode = useCallback((m: ThemeMode) => {
-    setModeState(m);
-  }, []);
+  const toggleTheme = useCallback(() => {
+    Animated.timing(fadeAnim, {
+      toValue: 0,
+      duration: 160,
+      useNativeDriver: true,
+    }).start(() => {
+      setMode((prev) => (prev === "dark" ? "light" : "dark"));
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 160,
+        useNativeDriver: true,
+      }).start();
+    });
+  }, [fadeAnim]);
 
-  const toggle = useCallback(() => {
-    setModeState((prev) => (prev === "dark" ? "light" : "dark"));
-  }, []);
-
-  const isDark = useMemo(() => {
-    if (mode === "system") return system === "dark";
-    return mode === "dark";
-  }, [mode, system]);
-
-  const value = useMemo(
-    () => ({ mode, isDark, setMode, toggle }),
-    [mode, isDark, setMode, toggle]
-  );
+  const C = mode === "dark" ? Colors.dark : Colors.light;
 
   return (
-    <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>
+    <ThemeContext.Provider value={{ mode, C, fadeAnim, toggleTheme }}>
+      <Animated.View style={{ flex: 1, opacity: fadeAnim }}>
+        {children}
+      </Animated.View>
+    </ThemeContext.Provider>
   );
 }
 
 export function useTheme() {
-  return useContext(ThemeContext);
+  const ctx = useContext(ThemeContext);
+  if (!ctx) throw new Error("useTheme must be inside ThemeProvider");
+  return ctx;
 }
-
-export const Colors = {
-  dark: {
-    background: "#0D1117",
-    surface: "#161B22",
-    surfaceLight: "#21262D",
-    primary: "#58A6FF",
-    accent: "#3FB950",
-    warning: "#D29922",
-    error: "#F85149",
-    text: "#E6EDF3",
-    textSecondary: "#8B949E",
-    border: "#30363D",
-    card: "#161B22",
-    trainColor: "#58A6FF",
-    etaPositive: "#3FB950",
-    etaWarning: "#D29922",
-  },
-  light: {
-    background: "#FFFFFF",
-    surface: "#F6F8FA",
-    surfaceLight: "#EEF1F5",
-    primary: "#0969DA",
-    accent: "#1A7F37",
-    warning: "#9A6700",
-    error: "#CF222E",
-    text: "#1F2328",
-    textSecondary: "#656D76",
-    border: "#D0D7DE",
-    card: "#F6F8FA",
-    trainColor: "#0969DA",
-    etaPositive: "#1A7F37",
-    etaWarning: "#9A6700",
-  },
-};

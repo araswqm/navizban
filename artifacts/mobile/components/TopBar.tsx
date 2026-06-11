@@ -1,192 +1,248 @@
-import React, { useState } from "react";
-import { View, Text, TouchableOpacity, StyleSheet, Modal } from "react-native";
-import { useTheme, Colors } from "../context/ThemeContext";
-import { NORTHBOUND_STATIONS } from "@workspace/navizban-core";
+import React, { useEffect, useState } from "react";
+import { Platform, Pressable, StyleSheet, Text, View } from "react-native";
+import { BlurView } from "expo-blur";
+import { Ionicons } from "@expo/vector-icons";
+import { router } from "expo-router";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import * as Haptics from "expo-haptics";
 
-interface Props {
-  fromIndex: number;
-  toIndex: number;
-  onFromChange: (idx: number) => void;
-  onToChange: (idx: number) => void;
-}
+import { useTheme } from "@/context/ThemeContext";
+import { useNavizban } from "@/context/NavizbanContext";
+import { NavizbanLogo } from "./NavizbanLogo";
+import { StationPicker } from "./StationPicker";
+import { LiveTrainPanel } from "./LiveTrainPanel";
 
-export function TopBar({ fromIndex, toIndex, onFromChange, onToChange }: Props) {
-  const { isDark } = useTheme();
-  const c = isDark ? Colors.dark : Colors.light;
-  const [showPicker, setShowPicker] = useState<"from" | "to" | null>(null);
+export function TopBar() {
+  const { C, mode, toggleTheme } = useTheme();
+  const insets = useSafeAreaInsets();
+  const {
+    boardingStation,
+    destinationStation,
+    boardingMode,
+    locationPermission,
+    isLoadingLocation,
+    proximityStatus,
+    liveTrains,
+    loadingTrains,
+    isJourneyActive,
+  } = useNavizban();
 
-  const stations = NORTHBOUND_STATIONS;
+  const [boardingPickerVisible, setBoardingPickerVisible] = useState(false);
+  const [destPickerVisible, setDestPickerVisible] = useState(false);
+  const [liveTrainsVisible, setLiveTrainsVisible] = useState(true);
+
+  // Yolculuk başladığında tren panelini kapat
+  useEffect(() => {
+    if (isJourneyActive) {
+      setLiveTrainsVisible(false);
+    } else {
+      setLiveTrainsVisible(true);
+    }
+  }, [isJourneyActive]);
+
+  const topPad = Platform.OS === "web" ? 14 : insets.top;
+  const locationOk = locationPermission === "granted";
+  const isManual = boardingMode === "manual";
+  const hasTrains = liveTrains.length > 0 || loadingTrains;
 
   return (
-    <View style={[styles.container, { backgroundColor: c.surface, borderColor: c.border }]}>
-      {/* Biniş */}
-      <TouchableOpacity
-        style={styles.stationBox}
-        onPress={() => setShowPicker("from")}
-      >
-        <Text style={[styles.label, { color: c.textSecondary }]}>Biniş</Text>
-        <Text style={[styles.stationName, { color: c.text }]} numberOfLines={1}>
-          {stations[fromIndex]?.name ?? "Seçin"}
-        </Text>
-        <Text style={[styles.time, { color: c.primary }]}>
-          {stations[fromIndex]?.arrivalMinutes ?? 0}dk
-        </Text>
-      </TouchableOpacity>
+    <>
+      <View style={[styles.container, { paddingTop: topPad, borderBottomColor: C.border }]}>
+        <BlurView intensity={80} tint={C.blurTint} style={StyleSheet.absoluteFill} />
 
-      {/* Ok */}
-      <View style={styles.arrowContainer}>
-        <Text style={[styles.arrow, { color: c.textSecondary }]}>→</Text>
+        <View style={styles.inner}>
+          <View style={styles.titleRow}>
+            <NavizbanLogo height={20} />
+            <View style={{ flex: 1 }} />
+            {hasTrains && (
+              <Pressable
+                onPress={() => { Haptics.selectionAsync(); setLiveTrainsVisible(!liveTrainsVisible); }}
+                style={[styles.themeBtn, { borderColor: C.border }]}
+                hitSlop={8}
+              >
+                <Ionicons
+                  name={liveTrainsVisible ? "eye-outline" : "eye-off-outline"}
+                  size={14}
+                  color={liveTrainsVisible ? C.accent : C.textMuted}
+                />
+              </Pressable>
+            )}
+            <Pressable
+              onPress={() => { Haptics.selectionAsync(); toggleTheme(); }}
+              style={[styles.themeBtn, { borderColor: C.border }]}
+              hitSlop={8}
+            >
+              <Ionicons
+                name={mode === "dark" ? "sunny-outline" : "moon-outline"}
+                size={14}
+                color={C.textMuted}
+              />
+            </Pressable>
+            <Pressable
+              onPress={() => { Haptics.selectionAsync(); router.push("/settings"); }}
+              style={[styles.themeBtn, { borderColor: C.border }]}
+              hitSlop={8}
+            >
+              <Ionicons name="settings-outline" size={14} color={C.textMuted} />
+            </Pressable>
+            <View style={[styles.gpsDot, { backgroundColor: locationOk ? C.success : C.danger }]} />
+            <Text style={[styles.gpsText, { color: locationOk ? C.success : C.danger }]}>
+              GPS
+            </Text>
+          </View>
+
+          <View style={styles.routeRow}>
+            <Pressable
+              style={({ pressed }) => [
+                styles.routeHalf,
+                styles.routeLeft,
+                {
+                  backgroundColor: isManual
+                    ? "rgba(251,188,4,0.08)"
+                    : "rgba(255,255,255,0.05)",
+                  borderColor: isManual ? "rgba(251,188,4,0.25)" : C.border,
+                },
+                pressed && { opacity: 0.75 },
+              ]}
+              onPress={() => { Haptics.selectionAsync(); setBoardingPickerVisible(true); }}
+            >
+              <View style={[styles.dot, { backgroundColor: isManual ? C.warning : C.success }]} />
+              <Text style={[styles.routeLabel, { color: C.textMuted }]}>Biniş</Text>
+              <Text style={[styles.routeStation, { color: C.textSecondary }]} numberOfLines={1}>
+                {isLoadingLocation && !isManual ? "Belirleniyor…" : boardingStation.name}
+              </Text>
+              {isManual && (
+                <Ionicons name="hand-left-outline" size={10} color={C.warning} />
+              )}
+              {!isManual && !isLoadingLocation && proximityStatus === "too_far" && (
+                <Ionicons name="warning" size={10} color={C.warning} />
+              )}
+            </Pressable>
+
+            <Ionicons name="arrow-forward" size={11} color={C.textMuted} style={{ flexShrink: 0 }} />
+
+            <Pressable
+              style={({ pressed }) => [
+                styles.routeHalf,
+                styles.routeRight,
+                {
+                  backgroundColor: "rgba(255,255,255,0.05)",
+                  borderColor: C.border,
+                },
+                pressed && { opacity: 0.75 },
+              ]}
+              onPress={() => { Haptics.selectionAsync(); setDestPickerVisible(true); }}
+            >
+              <View style={[styles.dot, { backgroundColor: C.accent }]} />
+              <Text style={[styles.routeLabel, { color: C.textMuted }]}>Varış</Text>
+              <Text style={[styles.routeStation, styles.routeStationDest, { color: C.text }]} numberOfLines={1}>
+                {destinationStation.name}
+              </Text>
+              <Ionicons name="chevron-down" size={12} color={C.textMuted} style={{ flexShrink: 0 }} />
+            </Pressable>
+          </View>
+
+          {liveTrainsVisible && hasTrains && (
+            <View style={styles.liveTrainSection}>
+              <LiveTrainPanel
+                trains={liveTrains}
+                loading={loadingTrains}
+              />
+            </View>
+          )}
+        </View>
       </View>
 
-      {/* Varış */}
-      <TouchableOpacity
-        style={styles.stationBox}
-        onPress={() => setShowPicker("to")}
-      >
-        <Text style={[styles.label, { color: c.textSecondary }]}>Varış</Text>
-        <Text style={[styles.stationName, { color: c.text }]} numberOfLines={1}>
-          {stations[toIndex]?.name ?? "Seçin"}
-        </Text>
-        <Text style={[styles.time, { color: c.primary }]}>
-          {stations[toIndex]?.arrivalMinutes ?? 0}dk
-        </Text>
-      </TouchableOpacity>
-
-      {/* Picker Modal */}
-      <Modal
-        visible={showPicker !== null}
-        transparent
-        animationType="slide"
-        onRequestClose={() => setShowPicker(null)}
-      >
-        <View style={[styles.modalOverlay]}>
-          <View style={[styles.modalContent, { backgroundColor: c.surface }]}>
-            <Text style={[styles.modalTitle, { color: c.text }]}>
-              {showPicker === "from" ? "Biniş İstasyonu" : "Varış İstasyonu"}
-            </Text>
-            <TouchableOpacity
-              style={[styles.closeButton, { borderColor: c.border }]}
-              onPress={() => setShowPicker(null)}
-            >
-              <Text style={[styles.closeButtonText, { color: c.textSecondary }]}>Kapat</Text>
-            </TouchableOpacity>
-            {stations.map((st, idx) => {
-              const isSelected = showPicker === "from" ? idx === fromIndex : idx === toIndex;
-              const isDisabled = showPicker === "from"
-                ? idx === toIndex
-                : idx === fromIndex;
-              return (
-                <TouchableOpacity
-                  key={st.id}
-                  style={[
-                    styles.pickerItem,
-                    isSelected && { backgroundColor: c.primary + "30" },
-                    isDisabled && { opacity: 0.4 },
-                  ]}
-                  onPress={() => {
-                    if (isDisabled) return;
-                    if (showPicker === "from") onFromChange(idx);
-                    else onToChange(idx);
-                    setShowPicker(null);
-                  }}
-                >
-                  <Text
-                    style={[
-                      styles.pickerItemText,
-                      { color: isSelected ? c.primary : c.text },
-                    ]}
-                  >
-                    {st.name}
-                  </Text>
-                  <Text style={[styles.pickerItemTime, { color: c.textSecondary }]}>
-                    {st.arrivalMinutes}dk
-                  </Text>
-                </TouchableOpacity>
-              );
-            })}
-          </View>
-        </View>
-      </Modal>
-    </View>
+      <StationPicker
+        visible={boardingPickerVisible}
+        onClose={() => setBoardingPickerVisible(false)}
+        mode="boarding"
+      />
+      <StationPicker
+        visible={destPickerVisible}
+        onClose={() => setDestPickerVisible(false)}
+        mode="destination"
+      />
+    </>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    overflow: "hidden",
+    borderBottomWidth: StyleSheet.hairlineWidth,
+  },
+  inner: {
+    paddingHorizontal: 14,
+    paddingBottom: 10,
+    gap: 7,
+  },
+  titleRow: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
+    gap: 8,
   },
-  stationBox: {
-    flex: 1,
+  themeBtn: {
+    width: 26,
+    height: 26,
+    borderRadius: 8,
+    borderWidth: StyleSheet.hairlineWidth,
     alignItems: "center",
-    paddingVertical: 4,
+    justifyContent: "center",
+    backgroundColor: "rgba(255,255,255,0.04)",
   },
-  label: {
+  gpsDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+  },
+  gpsText: {
     fontSize: 11,
-    fontWeight: "500",
-    marginBottom: 2,
-  },
-  stationName: {
-    fontSize: 16,
+    fontFamily: "Inter_700Bold",
     fontWeight: "700",
   },
-  time: {
-    fontSize: 12,
-    fontWeight: "500",
-    marginTop: 2,
-  },
-  arrowContainer: {
-    paddingHorizontal: 12,
-  },
-  arrow: {
-    fontSize: 24,
-    fontWeight: "300",
-  },
-  modalOverlay: {
-    flex: 1,
-    justifyContent: "flex-end",
-    backgroundColor: "rgba(0,0,0,0.5)",
-  },
-  modalContent: {
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    padding: 20,
-    maxHeight: "70%",
-  },
-  modalTitle: {
-    fontSize: 18,
-    fontWeight: "700",
-    marginBottom: 16,
-    textAlign: "center",
-  },
-  closeButton: {
-    borderWidth: 1,
-    borderRadius: 8,
-    padding: 8,
-    alignItems: "center",
-    marginBottom: 12,
-  },
-  closeButtonText: {
-    fontSize: 14,
-    fontWeight: "500",
-  },
-  pickerItem: {
+  routeRow: {
     flexDirection: "row",
-    justifyContent: "space-between",
     alignItems: "center",
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderRadius: 8,
-    marginBottom: 4,
+    gap: 6,
   },
-  pickerItemText: {
-    fontSize: 16,
-    fontWeight: "500",
+  routeHalf: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+    flex: 1,
+    minWidth: 0,
+    borderRadius: 9,
+    paddingHorizontal: 10,
+    paddingVertical: 7,
+    borderWidth: StyleSheet.hairlineWidth,
   },
-  pickerItemTime: {
-    fontSize: 14,
+  routeLeft: { flex: 1 },
+  routeRight: { flex: 1 },
+  dot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    flexShrink: 0,
+  },
+  routeLabel: {
+    fontSize: 9,
+    fontFamily: "Inter_500Medium",
+    flexShrink: 0,
+  },
+  routeStation: {
+    fontSize: 12,
+    fontFamily: "Inter_500Medium",
+    flex: 1,
+  },
+  routeStationDest: {
+    fontFamily: "Inter_600SemiBold",
+  },
+  liveTrainSection: {
+    marginTop: 4,
   },
 });

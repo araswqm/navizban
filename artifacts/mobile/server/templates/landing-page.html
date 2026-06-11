@@ -6,14 +6,14 @@
   <title>Navizban — İZBAN Tren Takip</title>
   <style>
     :root {
-      --bg: #0D1117;
-      --surface: #161B22;
-      --surface-light: #21262D;
-      --text: #E6EDF3;
-      --text-secondary: #8B949E;
-      --primary: #58A6FF;
-      --accent: #3FB950;
-      --border: #30363D;
+      --bg: #0E1117;
+      --surface: #181B24;
+      --surface-light: #1C2030;
+      --text: #E8EAED;
+      --text-secondary: rgba(232,234,237,0.65);
+      --primary: #1A73E8;
+      --accent: #34A853;
+      --border: rgba(255,255,255,0.08);
     }
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
@@ -30,13 +30,21 @@
       text-align: center;
       border-bottom: 1px solid var(--border);
     }
-    header h1 {
-      font-size: 2.5rem;
-      font-weight: 800;
-      background: linear-gradient(135deg, var(--primary), var(--accent));
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
+    header .logo {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 0 20px;
+    }
+    header .logo-img {
+      height: 50px;
+      width: auto;
+      max-width: 100%;
+      filter: drop-shadow(0 0 20px rgba(26, 115, 232, 0.35)) drop-shadow(0 0 40px rgba(26, 115, 232, 0.15));
+      transition: filter 0.3s ease;
+    }
+    header .logo-img:hover {
+      filter: drop-shadow(0 0 30px rgba(26, 115, 232, 0.55)) drop-shadow(0 0 60px rgba(26, 115, 232, 0.25));
     }
     header .tagline {
       color: var(--text-secondary);
@@ -148,20 +156,19 @@
       transition: transform 0.2s, opacity 0.2s;
     }
     .download-btn:hover { transform: translateY(-2px); opacity: 0.9; }
-    .download-btn.android {
-      background: var(--accent);
-      color: #FFFFFF;
-    }
-    .download-btn.ios {
-      background: var(--surface-light);
-      color: var(--text);
-      border: 1px solid var(--border);
-    }
-    .download-btn.soon {
+    .download-btn.disabled {
       background: var(--surface-light);
       color: var(--text-secondary);
       border: 1px solid var(--border);
       cursor: default;
+      opacity: 0.6;
+      pointer-events: none;
+    }
+    .download-btn.disabled:hover { transform: none; opacity: 0.6; }
+    .download-btn.ghost {
+      background: var(--surface-light);
+      color: var(--text);
+      border: 1px solid var(--border);
     }
 
     /* Info */
@@ -192,7 +199,7 @@
     footer a:hover { text-decoration: underline; }
 
     @media (max-width: 600px) {
-      header h1 { font-size: 1.8rem; }
+      header .logo-img { height: 36px; }
       .hero-text h2 { font-size: 1.4rem; }
       .placeholder-screenshot { width: 200px; height: 400px; font-size: 3rem; }
     }
@@ -202,9 +209,11 @@
   <div class="container">
     <!-- Header -->
     <header>
-      <h1>🚆 Navizban</h1>
-      <p class="tagline">İZBAN için akıllı tren navigasyonu ve takip uygulaması</p>
-      <span class="version">v1.2 Beta</span>
+      <div class="logo">
+        <img src="../../../logo.svg" alt="Navizban" class="logo-img">
+      </div>
+      <p class="tagline">İZBAN (İzmir Banliyö A.Ş.) için akıllı tren navigasyonu ve anonim takip uygulaması</p>
+      <span class="version">v1.2 Beta — Açık Kaynak</span>
     </header>
 
     <!-- Hero -->
@@ -213,7 +222,7 @@
         <h2>📡 Gerçek Zamanlı Tren Takibi</h2>
         <p>
           Navizban ile İZBAN trenlerinin konumunu harita üzerinde canlı olarak takip edin,
-          varış sürenizi öğrenin ve diğer yolcularla anonim olarak tren konumu paylaşın.
+          varış sürenizi dakika hassasiyetinde öğrenin ve diğer yolcularla anonim tren konumu paylaşın.
         </p>
       </div>
       <div class="placeholder-screenshot">🚆</div>
@@ -259,16 +268,16 @@
     <!-- Download -->
     <section class="download">
       <h2>📲 Hemen İndir</h2>
-      <p>Navizban v1.2 Beta — Tamamen ücretsiz ve açık kaynak</p>
+      <p>Navizban v1.2 Beta — Test aşamasında, yakında yayında!</p>
       <div class="download-buttons">
-        <a href="#" class="download-btn android">
-          📱 Android APK İndir
+        <a href="#" class="download-btn disabled">
+          🧪 Android — Beta Testinde
         </a>
-        <a href="#" class="download-btn soon">
-          🍎 iOS — Çok Yakında
+        <a href="#" class="download-btn disabled">
+          🍎 iOS — Beta Testinde
         </a>
-        <a href="https://github.com/araswqm/navizban" target="_blank" class="download-btn ios">
-          💻 GitHub'da İncele
+        <a href="https://github.com/araswqm/navizban/releases" target="_blank" class="download-btn ghost">
+          📦 Tüm Sürümler
         </a>
       </div>
     </section>

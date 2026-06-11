@@ -155,22 +155,6 @@ Detaylı API dokümanı: [`lib/api-spec/openapi.yaml`](lib/api-spec/openapi.yaml
 
 ---
 
-## 🌐 Domain Kurulumu (navizban.xyz → GitHub Pages)
-
-1. Repo → Settings → Pages → `Deploy from branch` → `main` / `docs`
-2. Custom domain: `navizban.xyz` yazın → Save
-3. **Cloudflare DNS** (DNS only, gri bulut):
-   ```
-   CNAME  @       araswqm.github.io
-   CNAME  www     araswqm.github.io
-   ```
-4. Cloudflare SSL/TLS: **Full (strict)**
-5. GitHub Pages: **Enforce HTTPS** işaretleyin
-
-> ⚠️ Cloudflare'de **Proxy (orange cloud)** değil, **DNS only (gray cloud)** kullanın!
-
----
-
 ## 🤝 Katkı
 
 Detaylı katkı rehberi: [`CONTRIBUTING.md`](CONTRIBUTING.md)

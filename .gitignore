@@ -19,3 +19,6 @@ ios/
 *.keystore
 credentials.json
 !docs/
+Navizban.zip
+*.jpg
+*.jpeg

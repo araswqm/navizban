@@ -1,0 +1,41 @@
+; ============================================================
+; Navizban DNS Zone File — navizban.xyz
+; Cloudflare'ye import etmek için BIND zone formatı
+; ============================================================
+$ORIGIN navizban.xyz.
+$TTL 3600
+
+; SOA (Cloudflare varsayılan)
+@   IN  SOA  ns1.cloudflare.com. dns.cloudflare.com. (
+            2026060901  ; Serial (YYYYMMDDNN)
+            7200        ; Refresh
+            3600        ; Retry
+            1209600     ; Expire
+            3600        ; Minimum TTL
+)
+
+; Name servers (Cloudflare)
+@       IN  NS  ns1.cloudflare.com.
+@       IN  NS  ns2.cloudflare.com.
+
+; ============================================================
+; Ana Site — GitHub Pages
+; DNS only (gri bulut) — GitHub Pages'e yönlendirir
+; ============================================================
+@       IN  CNAME  araswqm.github.io.
+www     IN  CNAME  araswqm.github.io.
+
+; ============================================================
+; Web Uygulaması — Cloudflare Pages (v1.2 Beta)
+; Proxied (turuncu bulut) ☁️ — Cloudflare Pages'e yönlendirir
+; ============================================================
+web     IN  CNAME  navizban-web.pages.dev.
+
+; ============================================================
+; E-posta (opsiyonel)
+; ============================================================
+@       IN  MX  10  mx1.forwardemail.net.
+@       IN  MX  10  mx2.forwardemail.net.
+
+; SPF (e-posta gönderimi yok)
+@       IN  TXT  "v=spf1 -all"

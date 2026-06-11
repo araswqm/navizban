@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Navizban Web Uygulaması</title>
+  <meta name="theme-color" content="#0D1117">
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      background: #0D1117;
+      color: #E6EDF3;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      text-align: center;
+      padding: 20px;
+    }
+    .container { max-width: 480px; }
+    .logo-img {
+      height: 50px;
+      width: auto;
+      margin-bottom: 30px;
+      filter: drop-shadow(0 0 20px rgba(88, 166, 255, 0.35));
+    }
+    h1 { font-size: 1.5rem; margin-bottom: 12px; }
+    p { color: #8B949E; margin-bottom: 24px; line-height: 1.6; }
+    .badge {
+      display: inline-block;
+      background: #21262D;
+      padding: 4px 14px;
+      border-radius: 20px;
+      font-size: 0.85rem;
+      color: #58A6FF;
+      border: 1px solid #30363D;
+      margin-bottom: 24px;
+    }
+    .loader {
+      width: 40px;
+      height: 40px;
+      border: 3px solid #21262D;
+      border-top: 3px solid #58A6FF;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin: 0 auto;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <img src="../logo.svg" alt="Navizban" class="logo-img">
+    <div class="badge">v1.2 Beta — Web</div>
+    <h1>🌐 Navizban Web Uygulaması</h1>
+    <p>
+      Expo web build tamamlandıktan sonra bu sayfa canlı uygulama ile değişecektir.
+      Cloudflare Pages üzerinden yayına almak için:
+    </p>
+    <pre style="background:#161B22; padding:16px; border-radius:8px; text-align:left; font-size:0.8rem; color:#8B949E; border:1px solid #30363D; overflow-x:auto;">
+Cloudflare Pages:
+• Repo: araswqm/navizban
+• Build: cd artifacts/mobile && npx expo export --platform web
+• Output: artifacts/mobile/dist/
+• Domain: web.navizban.xyz</pre>
+    <div class="loader" style="margin-top:24px;"></div>
+    <p style="margin-top:24px; font-size:0.85rem;">
+      Build çalışıyor... Lütfen bekleyin.
+    </p>
+  </div>
+</body>
+</html>

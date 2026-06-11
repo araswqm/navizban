@@ -1,0 +1,56 @@
+const dark = {
+  background: "#0E1117",
+  backgroundSecondary: "#181B24",
+  backgroundCard: "#1C2030",
+  backgroundElevated: "#232840",
+  text: "#E8EAED",
+  textSecondary: "rgba(232,234,237,0.65)",
+  textMuted: "rgba(232,234,237,0.38)",
+  accent: "#1A73E8",
+  accentLight: "#4285F4",
+  accentGlow: "rgba(26,115,232,0.25)",
+  success: "#34A853",
+  successGlow: "rgba(52,168,83,0.3)",
+  successMuted: "rgba(52,168,83,0.15)",
+  warning: "#FBBC04",
+  danger: "#EA4335",
+  dangerMuted: "rgba(234,67,53,0.15)",
+  border: "rgba(255,255,255,0.08)",
+  borderAccent: "rgba(26,115,232,0.35)",
+  trainColor: "#1A73E8",
+  stationActive: "#1A73E8",
+  stationInactive: "rgba(232,234,237,0.2)",
+  surfaceTint: "rgba(26,115,232,0.06)",
+  blurTint: "dark" as const,
+};
+
+const light = {
+  background: "#F1F3F4",
+  backgroundSecondary: "#FFFFFF",
+  backgroundCard: "#FFFFFF",
+  backgroundElevated: "#E8EAED",
+  text: "#1C1C1E",
+  textSecondary: "rgba(28,28,30,0.65)",
+  textMuted: "rgba(28,28,30,0.40)",
+  accent: "#1A73E8",
+  accentLight: "#4285F4",
+  accentGlow: "rgba(26,115,232,0.15)",
+  success: "#1E8E3E",
+  successGlow: "rgba(30,142,62,0.2)",
+  successMuted: "rgba(30,142,62,0.1)",
+  warning: "#F29900",
+  danger: "#D93025",
+  dangerMuted: "rgba(217,48,37,0.1)",
+  border: "rgba(0,0,0,0.08)",
+  borderAccent: "rgba(26,115,232,0.3)",
+  trainColor: "#1A73E8",
+  stationActive: "#1A73E8",
+  stationInactive: "rgba(28,28,30,0.2)",
+  surfaceTint: "rgba(26,115,232,0.04)",
+  blurTint: "light" as const,
+};
+
+export type ColorTheme = typeof dark;
+export type ThemeMode = "dark" | "light";
+
+export default { dark, light };

@@ -12,5 +12,8 @@
   },
   "engines": {
     "node": ">=18"
+  },
+  "pnpm": {
+    "node-linker": "hoisted"
   }
 }

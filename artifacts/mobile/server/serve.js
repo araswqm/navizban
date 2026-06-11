@@ -29,8 +29,8 @@ const server = http.createServer((req, res) => {
   const url = new URL(req.url, `http://localhost:${PORT}`);
   let filePath = path.join(PUBLIC_DIR, url.pathname === "/" ? "index.html" : url.pathname);
 
-  // Landing page
-  if (url.pathname === "/" || url.pathname === "/landing") {
+  // Landing page — sadece /landing yolunda göster
+  if (url.pathname === "/landing") {
     filePath = path.join(TEMPLATES_DIR, "landing-page.html");
     serveFile(res, filePath, "text/html; charset=utf-8");
     return;

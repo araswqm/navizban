@@ -1,0 +1,24 @@
+name = "navizban-api"
+main = "src/index.ts"
+compatibility_date = "2025-06-01"
+compatibility_flags = ["nodejs_compat"]
+
+# KV namespace — Cloudflare Dashboard → Workers → KV → Create
+# Oluşturduktan sonra `id` değerini buraya yapıştır:
+kv_namespaces = [
+  { binding = "NAVIZBAN_KV", id = "545de87edae840daaff165c1162718f3" }
+]
+
+routes = [
+  { pattern = "api.navizban.xyz/*", zone_name = "navizban.xyz" }
+]
+
+# Environment variables (opsiyonel)
+[vars]
+CORS_ORIGIN = "*"
+
+# Production ortamı
+[env.production]
+# kv_namespaces = [
+#   { binding = "NAVIZBAN_KV", id = "<prod-kv-id>" }
+# ]
