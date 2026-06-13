@@ -1,0 +1,9 @@
+# Navizban Web - Cloudflare Pages
+# Bu yapılandırma, Expo web export çıktısını (dist/) Cloudflare Pages'e deploy eder
+
+name = "navizban-web"
+compatibility_date = "2025-06-01"
+
+# Static assets dizini — Expo web export'un çıktı dizini
+[assets]
+directory = "./dist"
