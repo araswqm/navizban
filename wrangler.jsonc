@@ -1,0 +1,7 @@
+{
+  "name": "navizban",
+  "compatibility_date": "2025-06-01",
+  "assets": {
+    "directory": "./artifacts/mobile/dist"
+  }
+}
