@@ -43,6 +43,8 @@ web.navizban.xyz  → CNAME  navizban-web.pages.dev  (Cloudflare Pages, Proxied 
 - **Environment variables:**
   - `NODE_VERSION`: `20`
 
+> ⚠️ **ÖNEMLİ:** Build komutuna `npm install` EKLEMEYİN! Proje bir **pnpm workspace**'tir ve `workspace:*` protokolü kullanır. Cloudflare Pages zaten root'ta `pnpm install --frozen-lockfile` çalıştırır. `npm install` komutu `workspace:*` protokolünü anlamaz ve `EUNSUPPORTEDPROTOCOL` hatası verir.
+
 **Cloudflare Pages → Custom domains:**
 1. Pages projene git → Custom domains
 2. `web.navizban.xyz` ekle

@@ -211,3 +211,60 @@ export function getInterpolatedPosition(
     longitude: lower.longitude + (upper.longitude - lower.longitude) * frac,
   };
 }
+
+/**
+ * İki rota indeksi arasındaki toplam mesafeyi (km) hesaplar.
+ * IZBAN_ROUTE_COORDS boyunca haversine toplamı.
+ */
+export function getRouteSegmentDistanceKm(fromIdx: number, toIdx: number): number {
+  const low = Math.min(fromIdx, toIdx);
+  const high = Math.max(fromIdx, toIdx);
+  let total = 0;
+  for (let i = low; i < high; i++) {
+    total += haversineKm(
+      IZBAN_ROUTE_COORDS[i].latitude, IZBAN_ROUTE_COORDS[i].longitude,
+      IZBAN_ROUTE_COORDS[i + 1].latitude, IZBAN_ROUTE_COORDS[i + 1].longitude
+    );
+  }
+  return total;
+}
+
+/**
+ * Verilen GPS konumundan varış istasyonuna rota boyunca kalan mesafe (km).
+ */
+export function getRemainingRouteDistanceKm(
+  currentLat: number,
+  currentLon: number,
+  destinationStation: Station
+): number {
+  const currentIdx = findNearestRouteIndex(currentLat, currentLon);
+  const destIdx = findNearestRouteIndex(destinationStation.latitude, destinationStation.longitude);
+  return getRouteSegmentDistanceKm(currentIdx, destIdx);
+}
+
+/**
+ * GPS konumunun biniş-varış arası rotadaki mesafe bazlı ilerleme oranı (0-1).
+ */
+export function getDistanceProgressOnRoute(
+  currentLat: number,
+  currentLon: number,
+  fromStation: Station,
+  toStation: Station
+): number {
+  const fromIdx = findNearestRouteIndex(fromStation.latitude, fromStation.longitude);
+  const toIdx = findNearestRouteIndex(toStation.latitude, toStation.longitude);
+  const currentIdx = findNearestRouteIndex(currentLat, currentLon);
+
+  const totalDist = getRouteSegmentDistanceKm(fromIdx, toIdx);
+  if (totalDist <= 0) return 0;
+
+  const passedDist = getRouteSegmentDistanceKm(fromIdx, currentIdx);
+
+  // Kullanıcı rotanın dışındaysa clamp'le
+  const routeLow = Math.min(fromIdx, toIdx);
+  const routeHigh = Math.max(fromIdx, toIdx);
+  if (currentIdx < routeLow) return 0;
+  if (currentIdx > routeHigh) return 1;
+
+  return Math.min(passedDist / totalDist, 1);
+}
