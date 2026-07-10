@@ -1,5 +1,2 @@
-# Expo web app root
 /  /index.html  200
-
-# SPA fallback: tüm yollar index.html'e yönlendirilsin
 /*  /index.html  200

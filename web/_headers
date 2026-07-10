@@ -3,30 +3,28 @@
   X-Frame-Options: DENY
   Referrer-Policy: strict-origin-when-cross-origin
 
-# Service worker için gerekli
 /sw.js
   Cache-Control: no-cache
   Service-Worker-Allowed: /
 
-# WebAssembly
 *.wasm
   Content-Type: application/wasm
 
-# Fontlar
 *.woff2
   Cache-Control: public, max-age=31536000, immutable
+
 *.woff
   Cache-Control: public, max-age=31536000, immutable
 
-# Görseller
 *.svg
   Cache-Control: public, max-age=31536000, immutable
+
 *.png
   Cache-Control: public, max-age=31536000, immutable
+
 *.jpg
   Cache-Control: public, max-age=31536000, immutable
 
-# JavaScript modülleri
 *.js
   Content-Type: application/javascript; charset=utf-8
   Cache-Control: public, max-age=31536000, immutable
