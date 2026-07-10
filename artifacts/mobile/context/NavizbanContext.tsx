@@ -187,6 +187,8 @@ export function NavizbanProvider({ children, consentGiven = false, setConsent }:
    * State yerine ref'lerden okur — stale closure sorunu olmaz.
    * Tek callback hem journey hem idle modunu yönetir.
    */
+  const gpsMovingRef = useRef(false);
+
   const handleGpsPosition = useCallback((coords: { latitude: number; longitude: number }) => {
     const prevPos = lastGpsPosRef.current;
     const prevTime = lastGpsTimeRef.current;
@@ -198,9 +200,23 @@ export function NavizbanProvider({ children, consentGiven = false, setConsent }:
 
     if (journeyActiveRef.current) {
       // === JOURNEY MODU ===
+
+      // GPS gürültü filtresi (histerezisli):
+      //   - Duruyorken: ≥20m delta gerek (gürültüyü yok say)
+      //   - Hareket halindeyken: ≥5m delta yeter (küçük sapmaları da takip et)
+      const MIN_GPS_DELTA_STILL_KM = 0.020;
+      const MIN_GPS_DELTA_MOVING_KM = 0.005;
+      const gpsDeltaKm = prevPos
+        ? haversineKm(prevPos.latitude, prevPos.longitude, coords.latitude, coords.longitude)
+        : Infinity;
+      const threshold = gpsMovingRef.current ? MIN_GPS_DELTA_MOVING_KM : MIN_GPS_DELTA_STILL_KM;
+      const isSignificantMove = gpsDeltaKm >= threshold;
+      if (isSignificantMove) gpsMovingRef.current = true;
+      else if (gpsDeltaKm < 0.001) gpsMovingRef.current = false;
+
       const totalDist = totalRouteDistanceKmRef.current;
 
-      // GPS değişiminden hız hesapla (70/30 EMA)
+      // Hız hesapla (70/30 EMA) — sadece anlamlı hareket varsa
       let newSpeedKmh = speedKmhRef.current;
       if (prevPos && prevTime > 0) {
         const timeDeltaSec = (Date.now() - prevTime) / 1000;
@@ -216,28 +232,30 @@ export function NavizbanProvider({ children, consentGiven = false, setConsent }:
       speedKmhRef.current = newSpeedKmh;
       setSpeedKmh(newSpeedKmh);
 
-      // Kesintisiz imleç pozisyonu (dik izdüşüm + interpolasyon)
-      const routePos = getPreciseRoutePosition(coords.latitude, coords.longitude);
-      setTrainPosition({ latitude: routePos.latitude, longitude: routePos.longitude });
+      // Kesintisiz imleç pozisyonu (dik izdüşüm + interpolasyon) — sadece anlamlı hareket varsa
+      if (isSignificantMove) {
+        const routePos = getPreciseRoutePosition(coords.latitude, coords.longitude);
+        setTrainPosition({ latitude: routePos.latitude, longitude: routePos.longitude });
 
-      // Mesafe bazlı ilerleme
-      const distProgress = getDistanceProgressOnRoute(
-        coords.latitude, coords.longitude,
-        boardingRef.current, destRef.current
-      );
-      distanceProgressRef.current = distProgress;
-      cumulativeDistanceKmRef.current = distProgress * totalDist;
-      remainingMinutesRef.current = distProgress > 0
-        ? Math.max((1 - distProgress) / (distProgress / ((Date.now() - journeyStartTimeRef.current) / 60000)), 0)
-        : 0;
+        // Mesafe bazlı ilerleme — sadece hareket varsa güncelle
+        const distProgress = getDistanceProgressOnRoute(
+          coords.latitude, coords.longitude,
+          boardingRef.current, destRef.current
+        );
+        distanceProgressRef.current = distProgress;
+        cumulativeDistanceKmRef.current = distProgress * totalDist;
+        remainingMinutesRef.current = distProgress > 0
+          ? Math.max((1 - distProgress) / (distProgress / ((Date.now() - journeyStartTimeRef.current) / 60000)), 0)
+          : 0;
 
-      // Varış kontrolü (%99.5)
-      if (distProgress >= 0.995) {
-        setTrainPosition({ latitude: destRef.current.latitude, longitude: destRef.current.longitude });
-        setSpeedKmh(0);
-        speedKmhRef.current = 0;
-        setIsJourneyActive(false);
-        cancelJourneyNotification();
+        // Varış kontrolü (%99.5)
+        if (distProgress >= 0.995) {
+          setTrainPosition({ latitude: destRef.current.latitude, longitude: destRef.current.longitude });
+          setSpeedKmh(0);
+          speedKmhRef.current = 0;
+          setIsJourneyActive(false);
+          cancelJourneyNotification();
+        }
       }
     } else {
       // === IDLE MODU: sadece istasyon ve yakınlık güncelle ===
