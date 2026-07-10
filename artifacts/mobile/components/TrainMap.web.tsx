@@ -260,17 +260,9 @@ export function TrainMap() {
     }
   }, [trainPosition.latitude, trainPosition.longitude, isJourneyActive]);
 
-  useEffect(() => {
-    if (!mapRef.current) return;
-    const L = window.L;
-    if (!L) return;
-    if (userCircleRef.current) { userCircleRef.current.remove(); userCircleRef.current = null; }
-    if (userLocation) {
-      userCircleRef.current = L.circle([userLocation.latitude, userLocation.longitude], {
-        radius: 500, color: "#34A853", weight: 1.5, fillColor: "#34A853", fillOpacity: 0.07,
-      }).addTo(mapRef.current);
-    }
-  }, [userLocation?.latitude, userLocation?.longitude]);
+  // Kullanıcı GPS konumu yeşil daire ile gösterilmiyor — boarding station zaten yeşil,
+  // iki daire üst üste biniyor ve kafa karıştırıyor. İmleç (trainPosition) rotaya
+  // oturtulmuş halde zaten görünüyor.
 
   useEffect(() => {
     if (!mapRef.current) return;

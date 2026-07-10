@@ -240,12 +240,11 @@ export function NavizbanProvider({ children, consentGiven = false, setConsent }:
         cancelJourneyNotification();
       }
     } else {
-      // === IDLE MODU: istasyon, yakınlık, offset güncelle ===
+      // === IDLE MODU: sadece istasyon ve yakınlık güncelle ===
+      // (trainPosition güncellenmez — imleç GPS gürültüsüyle oynamasın)
       if (boardingModeRef.current === "gps") {
         const nearest = getNearestStation(coords.latitude, coords.longitude);
         setBoardingStation(nearest);
-        const routePos = getPreciseRoutePosition(coords.latitude, coords.longitude);
-        setTrainPosition({ latitude: routePos.latitude, longitude: routePos.longitude });
         const nearRail = isNearRail(coords.latitude, coords.longitude, 0.5);
         setProximityStatus(nearRail ? "ok" : "too_far");
         const offset = getEffectiveStartMinutes(coords.latitude, coords.longitude, nearest, destRef.current);
