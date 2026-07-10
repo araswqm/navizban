@@ -268,3 +268,79 @@ export function getDistanceProgressOnRoute(
 
   return Math.min(passedDist / totalDist, 1);
 }
+
+/**
+ * Noktanın bir doğru parçasına dik uzaklığı (lat/lng farkı, kareli).
+ * ~100m'lik segmentlerde Öklid yaklaşımı yeterlidir; küresel hata ihmal edilebilir.
+ * @returns fraction - segment üzerindeki en yakın noktanın kesirli konumu [0..1]
+ *          distSq - kareli uzaklık (karşılaştırma amaçlı)
+ */
+function pointToSegmentDistSq(
+  px: number, py: number,
+  ax: number, ay: number,
+  bx: number, by: number
+): { distSq: number; fraction: number } {
+  const dx = bx - ax;
+  const dy = by - ay;
+  const lenSq = dx * dx + dy * dy;
+
+  if (lenSq === 0) {
+    const dlat = px - ax;
+    const dlng = py - ay;
+    return { distSq: dlat * dlat + dlng * dlng, fraction: 0 };
+  }
+
+  const t = Math.max(0, Math.min(1, ((px - ax) * dx + (py - ay) * dy) / lenSq));
+  const cx = ax + t * dx;
+  const cy = ay + t * dy;
+
+  return {
+    distSq: (px - cx) * (px - cx) + (py - cy) * (py - cy),
+    fraction: t,
+  };
+}
+
+/**
+ * GPS konumunu rotadaki en yakın segmente dik izdüşüm ile oturtur.
+ * "findNearestRouteIndex" vertex bazlı eşleme yaparken bu fonksiyon
+ * iki vertex arasındaki segment üzerinde kesirli pozisyon döndürür.
+ * Bu sayede imleç ~100m'lik adımlarla atlamak yerine sürekli hareket eder.
+ *
+ * @returns routeIndex - en yakın segmentin başlangıç vertex indeksi
+ *          fraction - segment içi kesirli konum [0..1]
+ *          latitude/longitude - interpolasyonlu gerçek koordinat
+ */
+export function getPreciseRoutePosition(
+  lat: number,
+  lon: number
+): { routeIndex: number; fraction: number; latitude: number; longitude: number } {
+  let bestDistSq = Infinity;
+  let bestIdx = 0;
+  let bestFrac = 0;
+
+  for (let i = 0; i < IZBAN_ROUTE_COORDS.length - 1; i++) {
+    const a = IZBAN_ROUTE_COORDS[i];
+    const b = IZBAN_ROUTE_COORDS[i + 1];
+    const { distSq, fraction } = pointToSegmentDistSq(
+      lon, lat,
+      a.longitude, a.latitude,
+      b.longitude, b.latitude
+    );
+
+    if (distSq < bestDistSq) {
+      bestDistSq = distSq;
+      bestIdx = i;
+      bestFrac = fraction;
+    }
+  }
+
+  const a = IZBAN_ROUTE_COORDS[bestIdx];
+  const b = IZBAN_ROUTE_COORDS[bestIdx + 1];
+
+  return {
+    routeIndex: bestIdx,
+    fraction: bestFrac,
+    latitude: a.latitude + (b.latitude - a.latitude) * bestFrac,
+    longitude: a.longitude + (b.longitude - a.longitude) * bestFrac,
+  };
+}

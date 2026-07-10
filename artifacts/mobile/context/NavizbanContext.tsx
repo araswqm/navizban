@@ -14,13 +14,12 @@ import {
   Station,
   getNearestStation,
   getEstimatedMinutes,
-  getInterpolatedPosition,
   getEffectiveStartMinutes,
   getPositionOnRoute,
+  getPreciseRoutePosition,
   isNearRail,
   haversineKm,
   getRouteSegmentDistanceKm,
-  getRemainingRouteDistanceKm,
   getDistanceProgressOnRoute,
   findNearestRouteIndex,
 } from "@/constants/izban";
@@ -101,26 +100,8 @@ const NavizbanContext = createContext<NavizbanContextValue | null>(null);
 
 const DEFAULT_BOARDING_IDX = 19;
 const DEFAULT_DEST_IDX = 0;
-const LOCATION_TIMEOUT_MS = 8000;
-
-async function getCoordinatesWithTimeout(): Promise<{ latitude: number; longitude: number }> {
-  if (Platform.OS === "web" && typeof navigator !== "undefined" && navigator.geolocation) {
-    return new Promise((resolve, reject) => {
-      navigator.geolocation.getCurrentPosition(
-        pos => resolve({ latitude: pos.coords.latitude, longitude: pos.coords.longitude }),
-        err => reject(err),
-        { timeout: LOCATION_TIMEOUT_MS, maximumAge: 60000, enableHighAccuracy: false }
-      );
-    });
-  }
-  const loc = await Promise.race([
-    Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced }),
-    new Promise<never>((_, reject) =>
-      setTimeout(() => reject(new Error("timeout")), LOCATION_TIMEOUT_MS)
-    ),
-  ]);
-  return { latitude: (loc as any).coords.latitude, longitude: (loc as any).coords.longitude };
-}
+// GPS abonelik referansı için tip
+type GpsWatchHandle = { remove: () => void } | number | null;
 
 // API erişilemediğinde gösterilecek mock tren verisi
 function getMockTrains(stationName: string): LiveTrainInfo[] {
@@ -172,9 +153,7 @@ export function NavizbanProvider({ children, consentGiven = false, setConsent }:
   const [speedKmh, setSpeedKmh] = useState(0);
 
   const journeyTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const locationTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const journeyStartTimeRef = useRef<number>(0);
-  const lastGpsMinuteRef = useRef<number>(0);
   const notifIdRef = useRef<string | null>(null);
   const boardingRef = useRef(boardingStation);
   const destRef = useRef(destinationStation);
@@ -182,6 +161,8 @@ export function NavizbanProvider({ children, consentGiven = false, setConsent }:
   const userLocationRef = useRef(userLocation);
   const boardingModeRef = useRef(boardingMode);
   const effectiveOffsetRef = useRef(effectiveOffsetSeconds);
+  const journeyActiveRef = useRef(false);
+  const remainingMinutesRef = useRef(0);
   // GPS hız takibi için ref'ler
   const lastGpsPosRef = useRef<{ latitude: number; longitude: number } | null>(null);
   const lastGpsTimeRef = useRef<number>(0);
@@ -189,6 +170,8 @@ export function NavizbanProvider({ children, consentGiven = false, setConsent }:
   const speedKmhRef = useRef(0);
   const totalRouteDistanceKmRef = useRef(0);
   const distanceProgressRef = useRef(0);
+  // GPS abonelik handle'ı (watchPositionAsync / watchPosition)
+  const gpsWatchRef = useRef<GpsWatchHandle>(null);
 
   useEffect(() => { boardingRef.current = boardingStation; }, [boardingStation]);
   useEffect(() => { destRef.current = destinationStation; }, [destinationStation]);
@@ -197,44 +180,158 @@ export function NavizbanProvider({ children, consentGiven = false, setConsent }:
   useEffect(() => { boardingModeRef.current = boardingMode; }, [boardingMode]);
   useEffect(() => { effectiveOffsetRef.current = effectiveOffsetSeconds; }, [effectiveOffsetSeconds]);
   useEffect(() => { speedKmhRef.current = speedKmh; }, [speedKmh]);
+  useEffect(() => { journeyActiveRef.current = isJourneyActive; }, [isJourneyActive]);
 
-  const applyGpsLocation = useCallback((coords: { latitude: number; longitude: number }, dest: Station) => {
+  /**
+   * GPS aboneliğinden gelen her konum güncellemesini işler.
+   * State yerine ref'lerden okur — stale closure sorunu olmaz.
+   * Tek callback hem journey hem idle modunu yönetir.
+   */
+  const handleGpsPosition = useCallback((coords: { latitude: number; longitude: number }) => {
+    const prevPos = lastGpsPosRef.current;
+    const prevTime = lastGpsTimeRef.current;
+
+    // Her zaman son konumu güncelle
+    lastGpsPosRef.current = coords;
+    lastGpsTimeRef.current = Date.now();
     setUserLocation(coords);
-    const nearest = getNearestStation(coords.latitude, coords.longitude);
-    setBoardingStation(nearest);
-    const routePos = getPositionOnRoute(coords.latitude, coords.longitude);
-    setTrainPosition(routePos);
-    const nearRail = isNearRail(coords.latitude, coords.longitude, 0.5);
-    setProximityStatus(nearRail ? "ok" : "too_far");
-    const offset = getEffectiveStartMinutes(coords.latitude, coords.longitude, nearest, dest);
-    setEffectiveOffsetSeconds(offset * 60);
-  }, []);
+
+    if (journeyActiveRef.current) {
+      // === JOURNEY MODU ===
+      const totalDist = totalRouteDistanceKmRef.current;
+
+      // GPS değişiminden hız hesapla (70/30 EMA)
+      let newSpeedKmh = speedKmhRef.current;
+      if (prevPos && prevTime > 0) {
+        const timeDeltaSec = (Date.now() - prevTime) / 1000;
+        if (timeDeltaSec > 0.5) {
+          const distKm = haversineKm(
+            prevPos.latitude, prevPos.longitude,
+            coords.latitude, coords.longitude
+          );
+          const rawSpeed = Math.min((distKm / timeDeltaSec) * 3600, 160);
+          newSpeedKmh = rawSpeed * 0.7 + speedKmhRef.current * 0.3;
+        }
+      }
+      speedKmhRef.current = newSpeedKmh;
+      setSpeedKmh(newSpeedKmh);
+
+      // Kesintisiz imleç pozisyonu (dik izdüşüm + interpolasyon)
+      const routePos = getPreciseRoutePosition(coords.latitude, coords.longitude);
+      setTrainPosition({ latitude: routePos.latitude, longitude: routePos.longitude });
+
+      // Mesafe bazlı ilerleme
+      const distProgress = getDistanceProgressOnRoute(
+        coords.latitude, coords.longitude,
+        boardingRef.current, destRef.current
+      );
+      distanceProgressRef.current = distProgress;
+      cumulativeDistanceKmRef.current = distProgress * totalDist;
+      remainingMinutesRef.current = distProgress > 0
+        ? Math.max((1 - distProgress) / (distProgress / ((Date.now() - journeyStartTimeRef.current) / 60000)), 0)
+        : 0;
+
+      // Varış kontrolü (%99.5)
+      if (distProgress >= 0.995) {
+        setTrainPosition({ latitude: destRef.current.latitude, longitude: destRef.current.longitude });
+        setSpeedKmh(0);
+        speedKmhRef.current = 0;
+        setIsJourneyActive(false);
+        cancelJourneyNotification();
+      }
+    } else {
+      // === IDLE MODU: istasyon, yakınlık, offset güncelle ===
+      if (boardingModeRef.current === "gps") {
+        const nearest = getNearestStation(coords.latitude, coords.longitude);
+        setBoardingStation(nearest);
+        const routePos = getPreciseRoutePosition(coords.latitude, coords.longitude);
+        setTrainPosition({ latitude: routePos.latitude, longitude: routePos.longitude });
+        const nearRail = isNearRail(coords.latitude, coords.longitude, 0.5);
+        setProximityStatus(nearRail ? "ok" : "too_far");
+        const offset = getEffectiveStartMinutes(coords.latitude, coords.longitude, nearest, destRef.current);
+        setEffectiveOffsetSeconds(offset * 60);
+      }
+    }
+  }, [cancelJourneyNotification]);
+
+  /** GPS aboneliğini başlat (platforma uygun) */
+  const startGpsSubscription = useCallback(() => {
+    // Önceki aboneliği temizle
+    if (gpsWatchRef.current) {
+      if (Platform.OS === "web") {
+        navigator.geolocation.clearWatch(gpsWatchRef.current as number);
+      } else {
+        (gpsWatchRef.current as { remove: () => void }).remove();
+      }
+      gpsWatchRef.current = null;
+    }
+
+    try {
+      if (Platform.OS === "web" && typeof navigator !== "undefined" && navigator.geolocation) {
+        gpsWatchRef.current = navigator.geolocation.watchPosition(
+          (pos) => handleGpsPosition({
+            latitude: pos.coords.latitude,
+            longitude: pos.coords.longitude,
+          }),
+          (err) => console.warn("GPS watchPosition error:", err.message),
+          { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
+        );
+      } else {
+        Location.watchPositionAsync(
+          { accuracy: Location.Accuracy.High, timeInterval: 2000, distanceInterval: 0 },
+          (loc) => handleGpsPosition({
+            latitude: loc.coords.latitude,
+            longitude: loc.coords.longitude,
+          })
+        ).then(sub => { gpsWatchRef.current = sub; });
+      }
+    } catch (e) {
+      console.warn("Failed to start GPS subscription:", e);
+    }
+  }, [handleGpsPosition]);
 
   const requestLocation = useCallback(async () => {
     setIsLoadingLocation(true);
     try {
       if (Platform.OS === "web") {
         setLocationPermission("granted");
-        try {
-          const coords = await getCoordinatesWithTimeout();
-          applyGpsLocation(coords, destRef.current);
-        } catch {
-          setProximityStatus("ok");
-        }
       } else {
         const { status } = await Location.requestForegroundPermissionsAsync();
-        if (status === "granted") {
-          setLocationPermission("granted");
-          try {
-            const coords = await getCoordinatesWithTimeout();
-            applyGpsLocation(coords, destRef.current);
-          } catch {
-            setProximityStatus("ok");
-          }
-        } else {
+        if (status !== "granted") {
           setLocationPermission("denied");
           setProximityStatus("too_far");
+          setIsLoadingLocation(false);
+          return;
         }
+        setLocationPermission("granted");
+      }
+
+      // Sürekli GPS aboneliğini başlat
+      startGpsSubscription();
+
+      // İlk konumu tek seferlik al (abonelik gelene kadar)
+      try {
+        if (Platform.OS === "web" && navigator.geolocation) {
+          navigator.geolocation.getCurrentPosition(
+            (pos) => handleGpsPosition({
+              latitude: pos.coords.latitude,
+              longitude: pos.coords.longitude,
+            }),
+            () => setProximityStatus("ok"),
+            { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+          );
+        } else {
+          const loc = await Location.getCurrentPositionAsync({
+            accuracy: Location.Accuracy.High,
+          });
+          handleGpsPosition({
+            latitude: loc.coords.latitude,
+            longitude: loc.coords.longitude,
+          });
+        }
+      } catch {
+        // Abonelik kısa süre içinde konum sağlayacak
+        setProximityStatus("ok");
       }
     } catch {
       setLocationPermission("denied");
@@ -242,7 +339,7 @@ export function NavizbanProvider({ children, consentGiven = false, setConsent }:
     } finally {
       setIsLoadingLocation(false);
     }
-  }, [applyGpsLocation]);
+  }, [startGpsSubscription, handleGpsPosition]);
 
   const requestNotificationPermission = useCallback(async () => {
     try { await Notifications.requestPermissionsAsync(); } catch {}
@@ -269,6 +366,20 @@ export function NavizbanProvider({ children, consentGiven = false, setConsent }:
       }
     }
   }, [boardingStation.id, destinationStation.id]);
+
+  // GPS aboneliğini temizle (unmount)
+  useEffect(() => {
+    return () => {
+      if (gpsWatchRef.current) {
+        if (Platform.OS === "web") {
+          navigator.geolocation.clearWatch(gpsWatchRef.current as number);
+        } else {
+          (gpsWatchRef.current as { remove: () => void }).remove();
+        }
+        gpsWatchRef.current = null;
+      }
+    };
+  }, []);
 
   const scheduleJourneyNotification = useCallback(async (remainMins: number, prog: number) => {
     try {
@@ -312,7 +423,7 @@ export function NavizbanProvider({ children, consentGiven = false, setConsent }:
     cancelJourneyNotification();
   }, [cancelJourneyNotification]);
 
-  const startJourney = useCallback(async () => {
+  const startJourney = useCallback(() => {
     if (boardingStation.id === destinationStation.id) return;
     if (boardingMode === "manual") return;
     if (proximityStatus === "too_far") return;
@@ -325,31 +436,26 @@ export function NavizbanProvider({ children, consentGiven = false, setConsent }:
     const totalDist = getRouteSegmentDistanceKm(boardingRouteIdx, destRouteIdx);
     totalRouteDistanceKmRef.current = totalDist;
 
-    // Mevcut GPS konumuna göre başlangıç mesafesini ayarla
-    let initialDistance = 0;
-    try {
-      const coords = await getCoordinatesWithTimeout();
-      setUserLocation(coords);
-      lastGpsPosRef.current = coords;
+    // GPS aboneliğinden gelen en son konumu kullan, yoksa boarding istasyonu
+    const currentPos = userLocationRef.current;
+    if (currentPos) {
+      lastGpsPosRef.current = currentPos;
       lastGpsTimeRef.current = Date.now();
 
-      // Kullanıcının boarding'e göre ne kadar ilerlediğini hesapla
       const currentProgress = getDistanceProgressOnRoute(
-        coords.latitude, coords.longitude,
+        currentPos.latitude, currentPos.longitude,
         boardingStation, destinationStation
       );
-      initialDistance = currentProgress * totalDist;
-      cumulativeDistanceKmRef.current = initialDistance;
+      cumulativeDistanceKmRef.current = currentProgress * totalDist;
       distanceProgressRef.current = currentProgress;
 
-      // Başlangıç pozisyonunu rotaya oturt
-      const routePos = getPositionOnRoute(coords.latitude, coords.longitude);
-      setTrainPosition(routePos);
+      // Kesintisiz imleç pozisyonu
+      const routePos = getPreciseRoutePosition(currentPos.latitude, currentPos.longitude);
+      setTrainPosition({ latitude: routePos.latitude, longitude: routePos.longitude });
 
-      const nearRail = isNearRail(coords.latitude, coords.longitude, 0.5);
+      const nearRail = isNearRail(currentPos.latitude, currentPos.longitude, 0.5);
       setProximityStatus(nearRail ? "ok" : "too_far");
-    } catch {
-      // GPS alınamazsa boarding istasyonundan başlat
+    } else {
       cumulativeDistanceKmRef.current = 0;
       distanceProgressRef.current = 0;
       lastGpsPosRef.current = null;
@@ -357,106 +463,59 @@ export function NavizbanProvider({ children, consentGiven = false, setConsent }:
       setTrainPosition({ latitude: boardingStation.latitude, longitude: boardingStation.longitude });
     }
 
-    // Başlangıç hızı 0
     setSpeedKmh(0);
     speedKmhRef.current = 0;
 
     const startOffset = effectiveOffsetRef.current;
     setElapsedSeconds(startOffset);
     journeyStartTimeRef.current = Date.now();
-    lastGpsMinuteRef.current = Math.floor(startOffset / 60);
     setIsJourneyActive(true);
     scheduleJourneyNotification(total - startOffset / 60, startOffset / (total * 60));
   }, [boardingStation, destinationStation, boardingMode, proximityStatus, scheduleJourneyNotification]);
 
-  // Yolculuk timer'ı: Her saniye GPS konumu al, hız hesapla, mesafeye göre ilerle
+  // Yolculuk timer'ı: GPS aboneliği ayrı çalışır, bu sadece bildirim + zamanlama
   useEffect(() => {
     if (!isJourneyActive) return;
 
     let active = true;
-    let lastNotifMinute = 0;
+    let lastNotifMinute = Math.floor(Date.now() / 60000);
 
-    const tick = async () => {
+    const tick = () => {
       if (!active) return;
       const totalDist = totalRouteDistanceKmRef.current;
+      const prog = distanceProgressRef.current;
 
-      try {
-        const coords = await getCoordinatesWithTimeout();
-        if (!active) return;
+      // Varış kontrolü (birincil kontrol handleGpsPosition'da, burada yedek)
+      if (prog >= 0.995) {
+        setTrainPosition({ latitude: destRef.current.latitude, longitude: destRef.current.longitude });
+        setSpeedKmh(0);
+        speedKmhRef.current = 0;
+        setIsJourneyActive(false);
+        cancelJourneyNotification();
+        active = false;
+        return;
+      }
 
-        setUserLocation(coords);
+      // Kalan süre ve elapsed
+      const remainingDist = totalDist > 0 ? Math.max(totalDist - cumulativeDistanceKmRef.current, 0) : 0;
+      const speedForEta = speedKmhRef.current > 1 ? speedKmhRef.current : 40;
+      const remainingMins = (remainingDist / speedForEta) * 60;
+      remainingMinutesRef.current = remainingMins;
+      setElapsedSeconds(prog * totalMinutesRef.current * 60);
 
-        // Hız hesapla (km/saat)
-        let newSpeedKmh = speedKmhRef.current;
-        if (lastGpsPosRef.current && lastGpsTimeRef.current > 0) {
-          const timeDeltaSec = (Date.now() - lastGpsTimeRef.current) / 1000;
-          if (timeDeltaSec > 0.5) {
-            const distKm = haversineKm(
-              lastGpsPosRef.current.latitude, lastGpsPosRef.current.longitude,
-              coords.latitude, coords.longitude
-            );
-            // Anlık hız (km/saat), maksimum 160 km/s ile sınırla (İZBAN max hızı ~140)
-            const rawSpeed = (distKm / timeDeltaSec) * 3600;
-            // Hız smoothing: %70 yeni, %30 eski
-            newSpeedKmh = rawSpeed > 160 ? 160 : rawSpeed;
-            newSpeedKmh = newSpeedKmh * 0.7 + speedKmhRef.current * 0.3;
-          }
-        }
-
-        speedKmhRef.current = newSpeedKmh;
-        setSpeedKmh(newSpeedKmh);
-
-        // GPS konumunu rotaya oturt
-        const routePos = getPositionOnRoute(coords.latitude, coords.longitude);
-        setTrainPosition(routePos);
-
-        // Mesafe bazlı ilerleme oranını hesapla
-        const distProgress = getDistanceProgressOnRoute(
-          coords.latitude, coords.longitude,
-          boardingRef.current, destRef.current
-        );
-        distanceProgressRef.current = distProgress;
-
-        // Katedilen mesafeyi güncelle
-        cumulativeDistanceKmRef.current = distProgress * totalDist;
-
-        // Kalan süre: kalan mesafe / hız
-        const remainingDist = totalDist > 0 ? Math.max(totalDist - cumulativeDistanceKmRef.current, 0) : 0;
-        const speedForEta = newSpeedKmh > 1 ? newSpeedKmh : 40; // Duruyorsa varsayılan İZBAN hızıyla göster
-        const remainingMins = (remainingDist / speedForEta) * 60;
-        setElapsedSeconds((distProgress * totalMinutesRef.current) * 60);
-
-        // Bildirim (dakikada bir)
-        const currentMinute = Math.floor(Date.now() / 60000);
-        if (currentMinute > lastNotifMinute) {
-          lastNotifMinute = currentMinute;
-          scheduleJourneyNotification(remainingMins, distProgress);
-        }
-
-        // GPS geçmişini güncelle
-        lastGpsPosRef.current = coords;
-        lastGpsTimeRef.current = Date.now();
-
-        // Varış kontrolü (mesafe bazlı)
-        if (distProgress >= 0.995) {
-          setTrainPosition({ latitude: destRef.current.latitude, longitude: destRef.current.longitude });
-          setSpeedKmh(0);
-          speedKmhRef.current = 0;
-          setIsJourneyActive(false);
-          cancelJourneyNotification();
-          active = false;
-        }
-      } catch {
-        // GPS alınamazsa son hızı koru, pozisyonu güncelleme
+      // Bildirim (dakikada bir)
+      const currentMinute = Math.floor(Date.now() / 60000);
+      if (currentMinute > lastNotifMinute) {
+        lastNotifMinute = currentMinute;
+        scheduleJourneyNotification(remainingMins, prog);
       }
 
       if (active) {
-        journeyTimerRef.current = setTimeout(tick, 1000);
+        journeyTimerRef.current = setTimeout(tick, 2000);
       }
     };
 
-    // İlk tick'i hemen başlat
-    journeyTimerRef.current = setTimeout(tick, 1000);
+    journeyTimerRef.current = setTimeout(tick, 2000);
 
     return () => {
       active = false;
@@ -466,31 +525,6 @@ export function NavizbanProvider({ children, consentGiven = false, setConsent }:
       }
     };
   }, [isJourneyActive, scheduleJourneyNotification, cancelJourneyNotification]);
-
-  useEffect(() => {
-    if (locationPermission !== "granted") return;
-
-    locationTimerRef.current = setInterval(async () => {
-      try {
-        const coords = await getCoordinatesWithTimeout();
-        setUserLocation(coords);
-        if (!isJourneyActive && boardingModeRef.current === "gps") {
-          const nearest = getNearestStation(coords.latitude, coords.longitude);
-          setBoardingStation(nearest);
-          const routePos = getPositionOnRoute(coords.latitude, coords.longitude);
-          setTrainPosition(routePos);
-          const nearRail = isNearRail(coords.latitude, coords.longitude, 0.5);
-          setProximityStatus(nearRail ? "ok" : "too_far");
-          const offset = getEffectiveStartMinutes(coords.latitude, coords.longitude, nearest, destRef.current);
-          setEffectiveOffsetSeconds(offset * 60);
-        }
-      } catch {}
-    }, 60000);
-
-    return () => {
-      if (locationTimerRef.current) clearInterval(locationTimerRef.current);
-    };
-  }, [locationPermission, isJourneyActive]);
 
   const setDestination = useCallback((station: Station) => {
     setDestinationStation(station);
